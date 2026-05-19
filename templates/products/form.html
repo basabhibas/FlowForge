@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit' if product else 'Add' }} Product{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>{{ 'Edit' if product else 'Naya' }} Product</h2>
+
+    <form method="POST" style="margin-top: 20px;">
+
+        <div class="form-group">
+            <label>Product Name</label>
+            <input type="text" name="name" 
+                   value="{{ product['name'] if product else '' }}"
+                   placeholder="Jaise: Laptop, Mouse, T-Shirt...">
+        </div>
+
+        <div class="form-group">
+            <label>SKU (Unique Code)</label>
+            <input type="text" name="sku" 
+                   value="{{ product['sku'] if product else '' }}"
+                   placeholder="Jaise: LAP-001, MOU-001...">
+        </div>
+
+        <div class="form-group">
+            <label>Price (₹)</label>
+            <input type="number" name="unit_price" step="0.01"
+                   value="{{ product['unit_price'] if product else '' }}"
+                   placeholder="Jaise: 50000">
+        </div>
+
+        <div class="form-group">
+            <label>Stock Quantity</label>
+            <input type="number" name="stock_qty"
+                   value="{{ product['stock_qty'] if product else '0' }}"
+                   placeholder="0">
+        </div>
+
+        <div class="form-group">
+            <label>Description (Optional)</label>
+            <textarea name="description" rows="3" 
+                      placeholder="Product ke baare mein kuch likho...">{{ product['description'] if product else '' }}</textarea>
+        </div>
+
+        <button type="submit">
+            {{ 'Update' if product else 'Save' }} Product
+        </button>
+        <a href="/products" class="btn-cancel">Cancel</a>
+
+    </form>
+</div>
+{% endblock %}

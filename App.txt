@@ -1,0 +1,34 @@
+from flask import Flask, render_template, request, redirect, url_for, flash
+
+app = Flask(__name__)
+app.secret_key = 'flowforge-secret-123'
+
+notes = []
+
+@app.route('/')
+def index():
+    return render_template('index.html', builder="Abhi", notes=notes)
+
+@app.route('/notes/add', methods=['GET', 'POST'])
+def add_note():
+    if request.method == 'POST':
+        title = request.form['title']
+        content = request.form['content']
+
+        if not title or not content:
+            flash("Title aur content dono bharo!", "danger")
+            return redirect(url_for('add_note'))
+
+        notes.append({'title': title, 'content': content})
+        flash("Note save ho gaya!", "success")
+        return redirect(url_for('index'))
+
+    return render_template('add_note.html')
+
+@app.route('/about')
+def about():
+    tech_stack = ["Python 3 + Flask", "SQLite database", "Jinja2 templates", "HTML + CSS"]
+    return render_template('about.html', tech_stack=tech_stack)
+
+if __name__ == '__main__':
+    app.run(debug=True)

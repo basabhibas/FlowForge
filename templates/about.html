@@ -1,0 +1,21 @@
+<!-- templates/about.html -->
+{% extends "base.html" %}
+
+{% block title %}About{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>About FlowForge</h2>
+    <p style="margin-top: 12px; color: #666;">
+        FlowForge ek business workflow aur inventory system hai —
+        Python, Flask aur SQLite se bana hua.
+    </p>
+
+    <h3 style="margin-top: 20px;">Tech Stack</h3>
+    <ul style="margin-top: 8px; padding-left: 20px; color: #555;">
+        {% for tech in tech_stack %}
+            <li style="margin-bottom: 6px;">{{ tech }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

@@ -1,0 +1,13 @@
+<!-- templates/index.html -->
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Welcome to FlowForge 🚀</h1>
+    <p style="margin-top: 12px; color: #666;">
+        Tumhara business workflow system. Builder: {{ builder }}
+    </p>
+</div>
+{% endblock %}
