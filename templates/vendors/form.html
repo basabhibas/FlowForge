@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit' if vendor else 'Add' }} Vendor{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>{{ 'Edit' if vendor else 'Naya' }} Vendor</h2>
+
+    <form method="POST" style="margin-top: 20px;">
+
+        <div class="form-group">
+            <label>Vendor Name</label>
+            <input type="text" name="name"
+                   value="{{ vendor['name'] if vendor else '' }}"
+                   placeholder="Jaise: ABC Suppliers, XYZ Trading...">
+        </div>
+
+        <div class="form-group">
+            <label>Email</label>
+            <input type="email" name="email"
+                   value="{{ vendor['email'] if vendor else '' }}"
+                   placeholder="vendor@example.com">
+        </div>
+
+        <div class="form-group">
+            <label>Phone</label>
+            <input type="text" name="phone"
+                   value="{{ vendor['phone'] if vendor else '' }}"
+                   placeholder="9876543210">
+        </div>
+
+        <div class="form-group">
+            <label>Address</label>
+            <textarea name="address" rows="3"
+                      placeholder="Vendor ka address...">{{ vendor['address'] if vendor else '' }}</textarea>
+        </div>
+
+        <button type="submit">
+            {{ 'Update' if vendor else 'Save' }} Vendor
+        </button>
+        <a href="/vendors" class="btn-cancel">Cancel</a>
+
+    </form>
+</div>
+{% endblock %}

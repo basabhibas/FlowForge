@@ -70,7 +70,7 @@ def products_add():
             flash("Product add ho gaya!", "success")
             return redirect(url_for('products_list'))
         except Exception as e:
-            flash(f"Error: SKU already exist karta hai ya kuch galat hua!", "danger")
+            flash("Error: SKU already exist karta hai ya kuch galat hua!", "danger")
             return redirect(url_for('products_add'))
 
     return render_template('products/form.html', product=None)
@@ -111,6 +111,142 @@ def products_delete(id):
     db.close()
     flash("Product delete ho gaya!", "success")
     return redirect(url_for('products_list'))
+
+# ─── VENDORS ────────────────────────────────────────
+@app.route('/vendors')
+def vendors_list():
+    db = get_db()
+    vendors = db.execute('SELECT * FROM vendors').fetchall()
+    db.close()
+    return render_template('vendors/list.html', vendors=vendors)
+
+@app.route('/vendors/add', methods=['GET', 'POST'])
+def vendors_add():
+    if request.method == 'POST':
+        name = request.form['name']
+        email = request.form['email']
+        phone = request.form['phone']
+        address = request.form['address']
+
+        if not name:
+            flash("Vendor name zaroori hai!", "danger")
+            return redirect(url_for('vendors_add'))
+
+        db = get_db()
+        db.execute(
+            'INSERT INTO vendors (name, email, phone, address) VALUES (?, ?, ?, ?)',
+            (name, email, phone, address)
+        )
+        db.commit()
+        db.close()
+        flash("Vendor add ho gaya!", "success")
+        return redirect(url_for('vendors_list'))
+
+    return render_template('vendors/form.html', vendor=None)
+
+@app.route('/vendors/edit/<int:id>', methods=['GET', 'POST'])
+def vendors_edit(id):
+    db = get_db()
+    vendor = db.execute('SELECT * FROM vendors WHERE id = ?', (id,)).fetchone()
+
+    if not vendor:
+        flash("Vendor nahi mila!", "danger")
+        return redirect(url_for('vendors_list'))
+
+    if request.method == 'POST':
+        name = request.form['name']
+        email = request.form['email']
+        phone = request.form['phone']
+        address = request.form['address']
+
+        db.execute(
+            'UPDATE vendors SET name=?, email=?, phone=?, address=? WHERE id=?',
+            (name, email, phone, address, id)
+        )
+        db.commit()
+        db.close()
+        flash("Vendor update ho gaya!", "success")
+        return redirect(url_for('vendors_list'))
+
+    db.close()
+    return render_template('vendors/form.html', vendor=vendor)
+
+@app.route('/vendors/delete/<int:id>')
+def vendors_delete(id):
+    db = get_db()
+    db.execute('DELETE FROM vendors WHERE id = ?', (id,))
+    db.commit()
+    db.close()
+    flash("Vendor delete ho gaya!", "success")
+    return redirect(url_for('vendors_list'))
+
+# ─── CUSTOMERS ──────────────────────────────────────
+@app.route('/customers')
+def customers_list():
+    db = get_db()
+    customers = db.execute('SELECT * FROM customers').fetchall()
+    db.close()
+    return render_template('customers/list.html', customers=customers)
+
+@app.route('/customers/add', methods=['GET', 'POST'])
+def customers_add():
+    if request.method == 'POST':
+        name = request.form['name']
+        email = request.form['email']
+        phone = request.form['phone']
+        address = request.form['address']
+
+        if not name:
+            flash("Customer name zaroori hai!", "danger")
+            return redirect(url_for('customers_add'))
+
+        db = get_db()
+        db.execute(
+            'INSERT INTO customers (name, email, phone, address) VALUES (?, ?, ?, ?)',
+            (name, email, phone, address)
+        )
+        db.commit()
+        db.close()
+        flash("Customer add ho gaya!", "success")
+        return redirect(url_for('customers_list'))
+
+    return render_template('customers/form.html', customer=None)
+
+@app.route('/customers/edit/<int:id>', methods=['GET', 'POST'])
+def customers_edit(id):
+    db = get_db()
+    customer = db.execute('SELECT * FROM customers WHERE id = ?', (id,)).fetchone()
+
+    if not customer:
+        flash("Customer nahi mila!", "danger")
+        return redirect(url_for('customers_list'))
+
+    if request.method == 'POST':
+        name = request.form['name']
+        email = request.form['email']
+        phone = request.form['phone']
+        address = request.form['address']
+
+        db.execute(
+            'UPDATE customers SET name=?, email=?, phone=?, address=? WHERE id=?',
+            (name, email, phone, address, id)
+        )
+        db.commit()
+        db.close()
+        flash("Customer update ho gaya!", "success")
+        return redirect(url_for('customers_list'))
+
+    db.close()
+    return render_template('customers/form.html', customer=customer)
+
+@app.route('/customers/delete/<int:id>')
+def customers_delete(id):
+    db = get_db()
+    db.execute('DELETE FROM customers WHERE id = ?', (id,))
+    db.commit()
+    db.close()
+    flash("Customer delete ho gaya!", "success")
+    return redirect(url_for('customers_list'))
 
 # ─── ABOUT ──────────────────────────────────────────
 @app.route('/about')

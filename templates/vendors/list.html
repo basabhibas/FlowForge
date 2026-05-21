@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Vendors{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2>Vendors</h2>
+        <a href="/vendors/add" style="background: #e2b96f; color: #1a1a2e; padding: 8px 16px;
+           border-radius: 6px; text-decoration: none; font-size: 14px; font-weight: 600;">
+            + Add Vendor
+        </a>
+    </div>
+
+    <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+        <thead>
+            <tr style="background: #f0f0f0;">
+                <th style="padding: 10px; text-align: left; font-size: 13px;">Name</th>
+                <th style="padding: 10px; text-align: left; font-size: 13px;">Email</th>
+                <th style="padding: 10px; text-align: left; font-size: 13px;">Phone</th>
+                <th style="padding: 10px; text-align: left; font-size: 13px;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for vendor in vendors %}
+            <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 10px; font-size: 14px;">{{ vendor['name'] }}</td>
+                <td style="padding: 10px; font-size: 14px; color: #888;">{{ vendor['email'] or '—' }}</td>
+                <td style="padding: 10px; font-size: 14px; color: #888;">{{ vendor['phone'] or '—' }}</td>
+                <td style="padding: 10px;">
+                    <a href="/vendors/edit/{{ vendor['id'] }}"
+                       style="font-size: 13px; color: #1a1a2e; margin-right: 12px;">Edit</a>
+                    <a href="/vendors/delete/{{ vendor['id'] }}"
+                       style="font-size: 13px; color: #dc3545;"
+                       onclick="return confirm('Delete karna chahte ho?')">Delete</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4" style="padding: 20px; text-align: center; color: #aaa; font-size: 14px;">
+                    Koi vendor nahi abhi. "+ Add Vendor" click karo!
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

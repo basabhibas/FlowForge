@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit' if customer else 'Add' }} Customer{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>{{ 'Edit' if customer else 'Naya' }} Customer</h2>
+
+    <form method="POST" style="margin-top: 20px;">
+
+        <div class="form-group">
+            <label>Customer Name</label>
+            <input type="text" name="name"
+                   value="{{ customer['name'] if customer else '' }}"
+                   placeholder="Jaise: Rahul Sharma, ABC Company...">
+        </div>
+
+        <div class="form-group">
+            <label>Email</label>
+            <input type="email" name="email"
+                   value="{{ customer['email'] if customer else '' }}"
+                   placeholder="customer@example.com">
+        </div>
+
+        <div class="form-group">
+            <label>Phone</label>
+            <input type="text" name="phone"
+                   value="{{ customer['phone'] if customer else '' }}"
+                   placeholder="9876543210">
+        </div>
+
+        <div class="form-group">
+            <label>Address</label>
+            <textarea name="address" rows="3"
+                      placeholder="Customer ka address...">{{ customer['address'] if customer else '' }}</textarea>
+        </div>
+
+        <button type="submit">
+            {{ 'Update' if customer else 'Save' }} Customer
+        </button>
+        <a href="/customers" class="btn-cancel">Cancel</a>
+
+    </form>
+</div>
+{% endblock %}
