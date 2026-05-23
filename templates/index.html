@@ -1,34 +1,68 @@
-<!-- templates/index.html -->
 {% extends "base.html" %}
 
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h1>Welcome to FlowForge 🚀</h1>
-        <a href="/notes/add" style="background: #e2b96f; color: #1a1a2e; padding: 8px 16px;
-           border-radius: 6px; text-decoration: none; font-size: 14px; font-weight: 600;">
-            + Add Note
-        </a>
+
+<!-- Stat Cards -->
+<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px;">
+
+    <div class="card" style="text-align: center;">
+        <p style="font-size: 13px; color: #888; margin-bottom: 8px;">Total Products</p>
+        <h2 style="font-size: 36px; color: #1a1a2e;">{{ total_products }}</h2>
+        <a href="/products" style="font-size: 13px; color: #e2b96f; text-decoration: none;">View All →</a>
     </div>
 
-    <div style="margin-top: 24px;">
-        {% if notes %}
-            {% for note in notes %}
-            <div style="border: 1px solid #eee; border-radius: 6px;
-                        padding: 14px; margin-bottom: 10px; background: #fafafa;">
-                <h3 style="font-size: 15px;">{{ note.title }}</h3>
-                <p style="color: #666; font-size: 13px; margin-top: 6px;">
-                    {{ note.content }}
-                </p>
-            </div>
-            {% endfor %}
-        {% else %}
-            <p style="color: #aaa; font-size: 14px;">
-                No note has been saved, Click "+ Add Note" to add new!
-            </p>
-        {% endif %}
+    <div class="card" style="text-align: center;">
+        <p style="font-size: 13px; color: #888; margin-bottom: 8px;">Total Vendors</p>
+        <h2 style="font-size: 36px; color: #1a1a2e;">{{ total_vendors }}</h2>
+        <a href="/vendors" style="font-size: 13px; color: #e2b96f; text-decoration: none;">View All →</a>
     </div>
+
+    <div class="card" style="text-align: center;">
+        <p style="font-size: 13px; color: #888; margin-bottom: 8px;">Total Customers</p>
+        <h2 style="font-size: 36px; color: #1a1a2e;">{{ total_customers }}</h2>
+        <a href="/customers" style="font-size: 13px; color: #e2b96f; text-decoration: none;">View All →</a>
+    </div>
+
 </div>
+
+<!-- Low Stock Alert -->
+<div class="card">
+    <h3 style="margin-bottom: 16px; color: #dc3545;">⚠ Low Stock Alerts</h3>
+
+    {% if low_stock %}
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="background: #f0f0f0;">
+                <th style="padding: 10px; text-align: left; font-size: 13px;">Product</th>
+                <th style="padding: 10px; text-align: left; font-size: 13px;">SKU</th>
+                <th style="padding: 10px; text-align: left; font-size: 13px;">Stock</th>
+                <th style="padding: 10px; text-align: left; font-size: 13px;">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in low_stock %}
+            <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 10px; font-size: 14px;">{{ product['name'] }}</td>
+                <td style="padding: 10px; font-size: 14px; color: #888;">{{ product['sku'] }}</td>
+                <td style="padding: 10px;">
+                    <span style="background: #f8d7da; color: #721c24;
+                                 padding: 2px 8px; border-radius: 4px; font-size: 12px;">
+                        {{ product['stock_qty'] }} left
+                    </span>
+                </td>
+                <td style="padding: 10px;">
+                    <a href="/products/edit/{{ product['id'] }}"
+                       style="font-size: 13px; color: #1a1a2e;">Update Stock →</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color: #aaa; font-size: 14px;">✅ Sab products ka stock theek hai!</p>
+    {% endif %}
+</div>
+
 {% endblock %}

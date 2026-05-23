@@ -12,9 +12,25 @@ with app.app_context():
 @app.route('/')
 def index():
     db = get_db()
-    notes = db.execute('SELECT * FROM notes').fetchall()
+    
+    # Stats
+    total_products = db.execute('SELECT COUNT(*) FROM products').fetchone()[0]
+    total_vendors = db.execute('SELECT COUNT(*) FROM vendors').fetchone()[0]
+    total_customers = db.execute('SELECT COUNT(*) FROM customers').fetchone()[0]
+    
+    # Low stock products (stock 5 se kam)
+    low_stock = db.execute(
+        'SELECT * FROM products WHERE stock_qty < 5'
+    ).fetchall()
+    
     db.close()
-    return render_template('index.html', builder="Abhi", notes=notes)
+    
+    return render_template('index.html',
+        total_products=total_products,
+        total_vendors=total_vendors,
+        total_customers=total_customers,
+        low_stock=low_stock
+    )
 
 # ─── NOTES ──────────────────────────────────────────
 @app.route('/notes/add', methods=['GET', 'POST'])
