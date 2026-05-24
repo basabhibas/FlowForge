@@ -70,6 +70,8 @@ def products_add():
         unit_price = request.form['unit_price']
         stock_qty = request.form['stock_qty']
         description = request.form['description']
+        gst_percent = request.form.get('gst_percent', 0)
+        purchase_price = request.form.get('purchase_price', 0)
 
         if not name or not sku or not unit_price:
             flash("Name, SKU aur Price zaroori hain!", "danger")
@@ -78,8 +80,8 @@ def products_add():
         try:
             db = get_db()
             db.execute(
-                'INSERT INTO products (name, sku, unit_price, stock_qty, description) VALUES (?, ?, ?, ?, ?)',
-                (name, sku, float(unit_price), int(stock_qty or 0), description)
+                 'INSERT INTO products (name, sku, unit_price, stock_qty, description, gst_percent) VALUES (?, ?, ?, ?, ?, ?)',
+                (name, sku, float(unit_price), int(stock_qty or 0), description, float(gst_percent))
             )
             db.commit()
             db.close()
@@ -106,10 +108,12 @@ def products_edit(id):
         unit_price = request.form['unit_price']
         stock_qty = request.form['stock_qty']
         description = request.form['description']
+        gst_percent = request.form.get('gst_percent', 0)
+        purchase_price = request.form.get('purchase_price', 0)
 
         db.execute(
-            'UPDATE products SET name=?, sku=?, unit_price=?, stock_qty=?, description=? WHERE id=?',
-            (name, sku, float(unit_price), int(stock_qty or 0), description, id)
+            'UPDATE products SET name=?, sku=?, purchase_price=?, unit_price=?, stock_qty=?, description=?, gst_percent=? WHERE id=?',
+            (name, sku, float(purchase_price), float(unit_price), int(stock_qty or 0), description, float(gst_percent), id)
         )
         db.commit()
         db.close()
@@ -377,6 +381,28 @@ def orders_confirm(id):
         'UPDATE orders SET status = ? WHERE id = ?',
         ('confirmed', id)
     )
+
+    # Invoice automatically generate karo
+    order = db.execute('SELECT * FROM orders WHERE id = ?', (id,)).fetchone()
+    
+    # Subtotal aur GST calculate karo
+    subtotal = 0
+    gst_amount = 0
+    for item in items:
+        product = db.execute('SELECT * FROM products WHERE id = ?', (item['product_id'],)).fetchone()
+        item_subtotal = item['unit_price'] * item['quantity']
+        item_gst = item_subtotal * (product['gst_percent'] / 100)
+        subtotal += item_subtotal
+        gst_amount += item_gst
+
+    total_amount = subtotal + gst_amount
+
+    # Invoice banao
+    db.execute('''
+        INSERT INTO invoices (order_id, customer_id, status, subtotal, gst_amount, total_amount)
+        VALUES (?, ?, ?, ?, ?, ?)
+    ''', (id, order['customer_id'], 'pending', subtotal, gst_amount, total_amount))
+    
     db.commit()
     db.close()
 
@@ -523,6 +549,124 @@ def po_delete(id):
     db.close()
     flash("Purchase Order delete ho gaya!", "success")
     return redirect(url_for('po_list'))
+
+# ─── INVOICES ───────────────────────────────────────
+@app.route('/invoices')
+def invoices_list():
+    db = get_db()
+    invoices = db.execute('''
+        SELECT invoices.*, customers.name as customer_name
+        FROM invoices
+        JOIN customers ON invoices.customer_id = customers.id
+        ORDER BY invoices.created_at DESC
+    ''').fetchall()
+    db.close()
+    return render_template('invoices/list.html', invoices=invoices)
+
+@app.route('/invoices/<int:id>')
+def invoices_detail(id):
+    db = get_db()
+    invoice = db.execute('''
+        SELECT invoices.*, 
+               customers.name as customer_name,
+               customers.email as customer_email,
+               customers.phone as customer_phone,
+               customers.address as customer_address
+        FROM invoices
+        JOIN customers ON invoices.customer_id = customers.id
+        WHERE invoices.id = ?
+    ''', (id,)).fetchone()
+
+    if not invoice:
+        flash("Invoice nahi mila!", "danger")
+        return redirect(url_for('invoices_list'))
+
+    items = db.execute('''
+        SELECT order_items.*, 
+               products.name as product_name,
+               products.gst_percent as gst_percent
+        FROM order_items
+        JOIN products ON order_items.product_id = products.id
+        WHERE order_items.order_id = ?
+    ''', (invoice['order_id'],)).fetchall()
+    db.close()
+    return render_template('invoices/detail.html', invoice=invoice, items=items)
+
+@app.route('/invoices/mark-paid/<int:id>')
+def invoices_mark_paid(id):
+    db = get_db()
+    db.execute('UPDATE invoices SET status = ? WHERE id = ?', ('paid', id))
+    db.commit()
+    db.close()
+    flash("Invoice paid mark ho gaya!", "success")
+    return redirect(url_for('invoices_detail', id=id))
+
+@app.route('/invoices/<int:id>/print')
+def invoices_print(id):
+    db = get_db()
+    invoice = db.execute('''
+        SELECT invoices.*,
+               customers.name as customer_name,
+               customers.email as customer_email,
+               customers.phone as customer_phone,
+               customers.address as customer_address
+        FROM invoices
+        JOIN customers ON invoices.customer_id = customers.id
+        WHERE invoices.id = ?
+    ''', (id,)).fetchone()
+
+    items = db.execute('''
+        SELECT order_items.*,
+               products.name as product_name,
+               products.gst_percent as gst_percent
+        FROM order_items
+        JOIN products ON order_items.product_id = products.id
+        WHERE order_items.order_id = ?
+    ''', (invoice['order_id'],)).fetchall()
+
+    company = db.execute('SELECT * FROM settings WHERE id = 1').fetchone()
+    db.close()
+    return render_template('invoices/print.html', invoice=invoice, items=items, company=company)
+
+
+# ─── SETTINGS ───────────────────────────────────────
+@app.route('/settings', methods=['GET', 'POST'])
+def settings():
+    db = get_db()
+    if request.method == 'POST':
+        company_name = request.form['company_name']
+        company_email = request.form['company_email']
+        company_phone = request.form['company_phone']
+        company_address = request.form['company_address']
+        gstin = request.form['gstin']
+        invoice_prefix = request.form['invoice_prefix']
+
+        # Logo upload handle karo
+        logo_filename = db.execute('SELECT logo_filename FROM settings WHERE id = 1').fetchone()['logo_filename']
+        
+        if 'logo' in request.files:
+            logo = request.files['logo']
+            if logo.filename != '':
+                import os
+                logo_filename = 'company_logo.' + logo.filename.rsplit('.', 1)[1].lower()
+                logo.save(os.path.join('static', logo_filename))
+
+        db.execute('''
+            UPDATE settings SET 
+                company_name=?, company_email=?, company_phone=?,
+                company_address=?, gstin=?, invoice_prefix=?, logo_filename=?
+            WHERE id=1
+        ''', (company_name, company_email, company_phone,
+              company_address, gstin, invoice_prefix, logo_filename))
+        db.commit()
+        db.close()
+        flash("Settings save ho gayi!", "success")
+        return redirect(url_for('settings'))
+
+    settings = db.execute('SELECT * FROM settings WHERE id = 1').fetchone()
+    db.close()
+    return render_template('settings.html', settings=settings)
+
 
 # ─── ABOUT ──────────────────────────────────────────
 @app.route('/about')

@@ -100,5 +100,39 @@ def init_db():
         )
     ''')
 
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS invoices (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            order_id INTEGER NOT NULL,
+            customer_id INTEGER NOT NULL,
+            status TEXT DEFAULT 'pending',
+            subtotal REAL DEFAULT 0,
+            gst_amount REAL DEFAULT 0,
+            total_amount REAL DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (order_id) REFERENCES orders(id),
+            FOREIGN KEY (customer_id) REFERENCES customers(id)
+        )
+    ''')
+
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS settings (
+            id INTEGER PRIMARY KEY,
+            company_name TEXT DEFAULT 'My Company',
+            company_email TEXT,
+            company_phone TEXT,
+            company_address TEXT,
+            gstin TEXT,
+            invoice_prefix TEXT DEFAULT 'INV-',
+            logo_filename TEXT
+        )
+    ''')
+
+    # Default settings insert karo agar nahi hain
+    cursor.execute('''
+        INSERT OR IGNORE INTO settings (id, company_name, invoice_prefix)
+        VALUES (1, 'My Company', 'INV-')
+    ''')
+
     conn.commit()
     conn.close()

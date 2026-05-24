@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Invoice INV-{{ invoice['id'] }}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: sans-serif; padding: 40px; color: #333; }
+
+        .header { display: flex; justify-content: space-between; margin-bottom: 40px; }
+        .brand { font-size: 24px; font-weight: bold; color: #1a1a2e; }
+        .invoice-title { text-align: right; }
+        .invoice-title h1 { font-size: 32px; color: #e2b96f; }
+        .invoice-title p { color: #888; font-size: 14px; }
+
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px; }
+        .info-box p.label { font-size: 12px; color: #888; margin-bottom: 4px; }
+        .info-box p.value { font-size: 15px; font-weight: 600; }
+        .info-box p.sub { font-size: 13px; color: #555; margin-top: 2px; }
+
+        table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+        thead tr { background: #1a1a2e; color: white; }
+        th { padding: 10px; text-align: left; font-size: 13px; }
+        td { padding: 10px; font-size: 13px; border-bottom: 1px solid #eee; }
+
+        .totals { display: flex; justify-content: flex-end; }
+        .totals table { width: 280px; }
+        .totals td { border: none; padding: 6px 10px; }
+        .totals tr.final td { font-weight: bold; font-size: 15px; border-top: 2px solid #1a1a2e; }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .paid { background: #d4edda; color: #155724; }
+        .pending { background: #fff3cd; color: #856404; }
+
+        .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #aaa; }
+
+        @media print {
+            .no-print { display: none; }
+            body { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Print Button -->
+    <div class="no-print" style="margin-bottom: 20px;">
+        <button onclick="window.print()"
+                style="background: #1a1a2e; color: white; padding: 10px 20px;
+                border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
+            🖨 Print / Save as PDF
+        </button>
+        <a href="/invoices/{{ invoice['id'] }}"
+           style="margin-left: 12px; font-size: 14px; color: #888; text-decoration: none;">
+            ← Back
+        </a>
+    </div>
+
+    <!-- Header -->
+    <div class="header">
+        <div>
+            {% if company['logo_filename'] %}
+            <img src="/static/{{ company['logo_filename'] }}" height="50" style="border-radius: 6px;">
+            {% else %}
+            <p class="brand">⚙ {{ company['company_name'] }}</p>
+            {% endif %}
+            <p style="font-size: 13px; color: #555; margin-top: 6px;">{{ company['company_name'] }}</p>
+            {% if company['gstin'] %}
+            <p style="font-size: 12px; color: #888;">GSTIN: {{ company['gstin'] }}</p>
+            {% endif %}
+            <p style="font-size: 12px; color: #888;">{{ company['company_phone'] or '' }}</p>
+            <p style="font-size: 12px; color: #888;">{{ company['company_email'] or '' }}</p>
+            <p style="font-size: 12px; color: #888;">{{ company['company_address'] or '' }}</p>
+        </div>
+        <div class="invoice-title">
+            <h1>INVOICE</h1>
+            <p>INV-{{ invoice['id'] }}</p>
+            <p>{{ invoice['created_at'][:10] }}</p>
+            <span class="status-badge {{ invoice['status'] }}">
+                {{ invoice['status'] | upper }}
+            </span>
+        </div>
+    </div>
+
+    <!-- Info -->
+    <div class="info-grid">
+        <div class="info-box">
+            <p class="label">Bill To</p>
+            <p class="value">{{ invoice['customer_name'] }}</p>
+            <p class="sub">{{ invoice['customer_email'] or '' }}</p>
+            <p class="sub">{{ invoice['customer_phone'] or '' }}</p>
+            <p class="sub">{{ invoice['customer_address'] or '' }}</p>
+        </div>
+        <div class="info-box" style="text-align: right;">
+            <p class="label">Order Reference</p>
+            <p class="value">#{{ invoice['order_id'] }}</p>
+        </div>
+    </div>
+
+    <!-- Items -->
+    <table>
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Qty</th>
+                <th>Unit Price</th>
+                <th>GST %</th>
+                <th>GST Amt</th>
+                <th>Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>{{ item['product_name'] }}</td>
+                <td>{{ item['quantity'] }}</td>
+                <td>₹{{ "%.2f"|format(item['unit_price']) }}</td>
+                <td>{{ item['gst_percent'] }}%</td>
+                <td>₹{{ "%.2f"|format(item['unit_price'] * item['quantity'] * item['gst_percent'] / 100) }}</td>
+                <td>₹{{ "%.2f"|format(item['unit_price'] * item['quantity'] * (1 + item['gst_percent']/100)) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Totals -->
+    <div class="totals">
+        <table>
+            <tr>
+                <td style="color: #888;">Subtotal:</td>
+                <td style="text-align: right;">₹{{ "%.2f"|format(invoice['subtotal']) }}</td>
+            </tr>
+            <tr>
+                <td style="color: #888;">GST Amount:</td>
+                <td style="text-align: right;">₹{{ "%.2f"|format(invoice['gst_amount']) }}</td>
+            </tr>
+            <tr class="final">
+                <td>Total:</td>
+                <td style="text-align: right;">₹{{ "%.2f"|format(invoice['total_amount']) }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="footer">
+        <p>Thank you for your business! — Generated by FlowForge</p>
+    </div>
+
+</body>
+</html>

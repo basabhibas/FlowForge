@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Company Settings</h2>
+    <p style="color: #888; font-size: 14px; margin-top: 4px;">
+        Yeh info invoices pe automatically dikhegi.
+    </p>
+
+    <form method="POST" action="/settings" enctype="multipart/form-data" style="margin-top: 24px;">
+
+        <div class="form-group">
+            <label>Company Name</label>
+            <input type="text" name="company_name"
+                   value="{{ settings['company_name'] or '' }}"
+                   placeholder="Jaise: ABC Traders, XYZ Pvt Ltd...">
+        </div>
+
+        <div class="form-group">
+            <label>Company Email</label>
+            <input type="email" name="company_email"
+                   value="{{ settings['company_email'] or '' }}"
+                   placeholder="company@example.com">
+        </div>
+
+        <div class="form-group">
+            <label>Company Phone</label>
+            <input type="text" name="company_phone"
+                   value="{{ settings['company_phone'] or '' }}"
+                   placeholder="9876543210">
+        </div>
+
+        <div class="form-group">
+            <label>Company Address</label>
+            <textarea name="company_address" rows="3"
+                      placeholder="Full address...">{{ settings['company_address'] or '' }}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label>GSTIN</label>
+            <input type="text" name="gstin"
+                   value="{{ settings['gstin'] or '' }}"
+                   placeholder="22AAAAA0000A1Z5">
+        </div>
+
+        <div class="form-group">
+            <label>Invoice Prefix</label>
+            <input type="text" name="invoice_prefix"
+                   value="{{ settings['invoice_prefix'] or 'INV-' }}"
+                   placeholder="INV-, BILL-, etc.">
+        </div>
+
+        <div class="form-group">
+            <label>Company Logo</label>
+            {% if settings['logo_filename'] %}
+            <div style="margin-bottom: 10px;">
+                <img src="/static/{{ settings['logo_filename'] }}" height="50" style="border-radius: 6px;">
+                <p style="font-size: 12px; color: #888; margin-top: 4px;">Current logo</p>
+            </div>
+            {% endif %}
+            <input type="file" name="logo" accept="image/*"
+                   style="font-size: 14px;">
+            <p style="font-size: 12px; color: #888; margin-top: 4px;">
+                PNG ya JPG — recommended size: 200x60px
+            </p>
+        </div>
+
+        <button type="submit">Save Settings</button>
+
+    </form>
+</div>
+{% endblock %}
