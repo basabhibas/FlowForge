@@ -1,6 +1,7 @@
 # app.py
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, session
+from werkzeug.security import generate_password_hash, check_password_hash
 from database import get_db, init_db, close_db
 
 app = Flask(__name__)
@@ -12,6 +13,20 @@ app.teardown_appcontext(close_db)
 
 with app.app_context():
     init_db()
+    # Ensure a default admin user exists (username: admin / password: admin)
+    db = get_db()
+    cur = db.execute('SELECT COUNT(*) FROM users').fetchone()
+    if cur is None or cur[0] == 0:
+        pw_hash = generate_password_hash('admin')
+        try:
+            db.execute(
+                'INSERT INTO users (username, business_name, password_hash) VALUES (?, ?, ?)',
+                ('admin', 'FlowForge Admin', pw_hash)
+            )
+            db.commit()
+            app.logger.info('Created default admin user (username: admin)')
+        except Exception:
+            pass
 
 
 # ─── HOME ───────────────────────────────────────────
@@ -19,41 +34,64 @@ with app.app_context():
 def index():
     db = get_db()
 
-    total_products  = db.execute('SELECT COUNT(*) FROM products').fetchone()[0]
-    total_vendors   = db.execute('SELECT COUNT(*) FROM vendors').fetchone()[0]
-    total_customers = db.execute('SELECT COUNT(*) FROM customers').fetchone()[0]
+    total_products   = db.execute('SELECT COUNT(*) FROM products').fetchone()[0]
+    total_vendors    = db.execute('SELECT COUNT(*) FROM vendors').fetchone()[0]
+    total_customers  = db.execute('SELECT COUNT(*) FROM customers').fetchone()[0]
+    total_orders     = db.execute('SELECT COUNT(*) FROM orders').fetchone()[0]
+    pending_orders   = db.execute("SELECT COUNT(*) FROM orders WHERE status = 'pending'").fetchone()[0]
+    total_revenue    = db.execute("SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE status = 'confirmed'").fetchone()[0]
+    paid_invoices    = db.execute("SELECT COUNT(*) FROM invoices WHERE status = 'paid'").fetchone()[0]
+    pending_invoices = db.execute("SELECT COUNT(*) FROM invoices WHERE status = 'pending'").fetchone()[0]
 
     # Dynamic low-stock: each product defines its own min_stock threshold
     low_stock = db.execute(
         'SELECT * FROM products WHERE stock_qty <= min_stock'
     ).fetchall()
 
+    monthly = db.execute('''
+        SELECT strftime('%Y-%m', created_at) as month,
+               SUM(total_amount) as revenue
+        FROM orders
+        WHERE status = 'confirmed'
+        GROUP BY month
+        ORDER BY month DESC
+        LIMIT 6
+    ''').fetchall()
+    monthly_labels = [row['month'] for row in reversed(monthly)]
+    monthly_data   = [row['revenue'] for row in reversed(monthly)]
+
+    top_products = db.execute('''
+        SELECT products.name,
+               SUM(order_items.quantity) as total_qty,
+               SUM(order_items.quantity * order_items.unit_price) as total_revenue
+        FROM order_items
+        JOIN products ON order_items.product_id = products.id
+        JOIN orders   ON order_items.order_id   = orders.id
+        WHERE orders.status = 'confirmed'
+        GROUP BY products.id
+        ORDER BY total_revenue DESC
+        LIMIT 5
+    ''').fetchall()
+    product_labels = [p['name'] for p in top_products]
+    product_data   = [p['total_revenue'] for p in top_products]
+
     return render_template('index.html',
         total_products=total_products,
         total_vendors=total_vendors,
         total_customers=total_customers,
+        total_orders=total_orders,
+        pending_orders=pending_orders,
+        total_revenue=total_revenue,
+        paid_invoices=paid_invoices,
+        pending_invoices=pending_invoices,
         low_stock=low_stock,
+        monthly_labels=monthly_labels,
+        monthly_data=monthly_data,
+        top_products=top_products,
+        product_labels=product_labels,
+        product_data=product_data,
     )
 
-
-# ─── NOTES ──────────────────────────────────────────
-@app.route('/notes/add', methods=['GET', 'POST'])
-def add_note():
-    if request.method == 'POST':
-        title   = request.form['title']
-        content = request.form['content']
-
-        if not title or not content:
-            flash("Title aur content dono bharo!", "danger")
-            return redirect(url_for('add_note'))
-
-        db = get_db()
-        db.execute('INSERT INTO notes (title, content) VALUES (?, ?)', (title, content))
-        db.commit()
-        flash("Note save ho gaya!", "success")
-        return redirect(url_for('index'))
-
-    return render_template('add_note.html')
 
 
 # ─── PRODUCTS ───────────────────────────────────────
@@ -709,59 +747,78 @@ def settings():
         return redirect(url_for('settings'))
 
     settings_row = db.execute('SELECT * FROM settings WHERE id = 1').fetchone()
-    return render_template('settings.html', settings=settings_row)
+    account_user = None
+    if session.get('user_id'):
+        account_user = db.execute('SELECT * FROM users WHERE id = ?', (session['user_id'],)).fetchone()
+    return render_template('settings.html', settings=settings_row, account_user=account_user)
+
+
+@app.route('/account', methods=['POST'])
+def account_update():
+    if not session.get('user_id'):
+        flash('Please log in to update your account.', 'danger')
+        return redirect(url_for('login'))
+
+    email = request.form.get('username')
+    business_name = request.form.get('business_name')
+    new_password = request.form.get('new_password')
+    confirm_password = request.form.get('confirm_password')
+
+    if not email or not business_name:
+        flash('Email and business name are required.', 'danger')
+        return redirect(url_for('settings'))
+
+    db = get_db()
+    current_user = db.execute('SELECT * FROM users WHERE id = ?', (session['user_id'],)).fetchone()
+    if not current_user:
+        flash('Account not found.', 'danger')
+        return redirect(url_for('login'))
+
+    existing = db.execute('SELECT * FROM users WHERE username = ? AND id != ?', (email, current_user['id'])).fetchone()
+    if existing:
+        flash('Email already registered', 'danger')
+        return redirect(url_for('settings'))
+
+    if new_password:
+        if new_password != confirm_password:
+            flash('Passwords do not match.', 'danger')
+            return redirect(url_for('settings'))
+        password_hash = generate_password_hash(new_password)
+        db.execute(
+            'UPDATE users SET username = ?, business_name = ?, password_hash = ? WHERE id = ?',
+            (email, business_name, password_hash, current_user['id'])
+        )
+    else:
+        db.execute(
+            'UPDATE users SET username = ?, business_name = ? WHERE id = ?',
+            (email, business_name, current_user['id'])
+        )
+
+    db.commit()
+    session['username'] = email
+    session['business_name'] = business_name
+    flash('Account updated successfully.', 'success')
+    return redirect(url_for('settings'))
+
+
+@app.route('/account/delete', methods=['POST'])
+def account_delete():
+    if not session.get('user_id'):
+        flash('Please log in to delete your account.', 'danger')
+        return redirect(url_for('login'))
+
+    db = get_db()
+    db.execute('DELETE FROM users WHERE id = ?', (session['user_id'],))
+    db.commit()
+    session.clear()
+    flash('Your account has been deleted.', 'success')
+    return redirect(url_for('index'))
 
 
 # ─── REPORTS ────────────────────────────────────────
 @app.route('/reports')
 def reports():
-    db = get_db()
-
-    total_revenue = db.execute(
-        "SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE status = 'confirmed'"
-    ).fetchone()[0]
-    total_orders    = db.execute("SELECT COUNT(*) FROM orders").fetchone()[0]
-    paid_invoices   = db.execute("SELECT COUNT(*) FROM invoices WHERE status = 'paid'").fetchone()[0]
-    pending_invoices = db.execute("SELECT COUNT(*) FROM invoices WHERE status = 'pending'").fetchone()[0]
-
-    monthly = db.execute('''
-        SELECT strftime('%Y-%m', created_at) as month,
-               SUM(total_amount) as revenue
-        FROM orders
-        WHERE status = 'confirmed'
-        GROUP BY month
-        ORDER BY month DESC
-        LIMIT 6
-    ''').fetchall()
-    monthly_labels = [row['month'] for row in reversed(monthly)]
-    monthly_data   = [row['revenue'] for row in reversed(monthly)]
-
-    top_products = db.execute('''
-        SELECT products.name,
-               SUM(order_items.quantity) as total_qty,
-               SUM(order_items.quantity * order_items.unit_price) as total_revenue
-        FROM order_items
-        JOIN products ON order_items.product_id = products.id
-        JOIN orders   ON order_items.order_id   = orders.id
-        WHERE orders.status = 'confirmed'
-        GROUP BY products.id
-        ORDER BY total_revenue DESC
-        LIMIT 5
-    ''').fetchall()
-    product_labels = [p['name'] for p in top_products]
-    product_data   = [p['total_revenue'] for p in top_products]
-
-    return render_template('reports.html',
-        total_revenue=total_revenue,
-        total_orders=total_orders,
-        paid_invoices=paid_invoices,
-        pending_invoices=pending_invoices,
-        monthly_labels=monthly_labels,
-        monthly_data=monthly_data,
-        top_products=top_products,
-        product_labels=product_labels,
-        product_data=product_data,
-    )
+    return redirect(url_for('index'))
 
 
 # ─── ABOUT ──────────────────────────────────────────
@@ -774,6 +831,96 @@ def about():
         "HTML + CSS",
     ]
     return render_template('about.html', tech_stack=tech_stack)
+
+
+# ─── AUTH ───────────────────────────────────────────
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+
+        if not username or not password:
+            flash('Username and password required', 'danger')
+            return redirect(url_for('login'))
+
+        db = get_db()
+        user = db.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
+        if user and check_password_hash(user['password_hash'], password):
+            session.clear()
+            session['user_id'] = user['id']
+            session['username'] = user['username']
+            session['business_name'] = user['business_name'] or 'FlowForge'
+            flash('Logged in successfully', 'success')
+            return redirect(url_for('index'))
+        else:
+            flash('Invalid credentials', 'danger')
+            return redirect(url_for('login'))
+
+    return render_template('login.html')
+
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    flash('Logged out', 'success')
+    return redirect(url_for('index'))
+
+
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        business_name = request.form.get('business_name')
+        password = request.form.get('password')
+        password2 = request.form.get('password2')
+
+        if not username or not password or not business_name:
+            flash('Email, business name and password are required', 'danger')
+            return redirect(url_for('signup'))
+
+        if password != password2:
+            flash('Passwords do not match', 'danger')
+            return redirect(url_for('signup'))
+
+        db = get_db()
+        existing = db.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
+        if existing:
+            flash('Email already registered', 'danger')
+            return redirect(url_for('signup'))
+
+        pw_hash = generate_password_hash(password)
+        cursor = db.execute(
+            'INSERT INTO users (username, business_name, password_hash) VALUES (?, ?, ?)',
+            (username, business_name, pw_hash)
+        )
+        db.commit()
+        user_id = cursor.lastrowid
+        session.clear()
+        session['user_id'] = user_id
+        session['username'] = username
+        session['business_name'] = business_name
+        flash('Account created and logged in successfully.', 'success')
+        return redirect(url_for('index'))
+
+    return render_template('signup.html')
+
+
+@app.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        if not username:
+            flash('Please enter your username', 'danger')
+            return redirect(url_for('forgot_password'))
+
+        db = get_db()
+        user = db.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
+        # In a real app we'd email a reset link. Here we just flash a generic message.
+        flash('If an account with that username exists, a password reset link has been sent (simulated).', 'info')
+        return redirect(url_for('login'))
+
+    return render_template('forgot_password.html')
 
 
 if __name__ == '__main__':

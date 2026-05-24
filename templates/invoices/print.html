@@ -2,124 +2,137 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Invoice INV-{{ invoice['id'] }}</title>
+    <title>Invoice {{ company['invoice_prefix'] }}{{ invoice['id'] }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: sans-serif; padding: 40px; color: #333; }
+        body { font-family: 'DM Sans', sans-serif; background: #f5f5f5; color: #1a1a2e; }
+        .page { max-width: 780px; margin: 0 auto; background: white; padding: 48px; }
 
-        .header { display: flex; justify-content: space-between; margin-bottom: 40px; }
-        .brand { font-size: 24px; font-weight: bold; color: #1a1a2e; }
-        .invoice-title { text-align: right; }
-        .invoice-title h1 { font-size: 32px; color: #e2b96f; }
-        .invoice-title p { color: #888; font-size: 14px; }
+        .inv-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 36px; }
+        .company-name { font-family: 'Playfair Display', serif; font-size: 22px; color: #1a1a2e; }
+        .tagline { font-size: 11px; color: #888; letter-spacing: 1.5px; text-transform: uppercase; margin-top: 3px; }
+        .inv-title-area { text-align: right; }
+        .inv-title-area h1 { font-family: 'Playfair Display', serif; font-size: 40px; color: #1a1a2e; letter-spacing: 3px; }
+        .inv-id { font-size: 13px; color: #888; margin-top: 4px; letter-spacing: 1px; }
 
-        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px; }
-        .info-box p.label { font-size: 12px; color: #888; margin-bottom: 4px; }
-        .info-box p.value { font-size: 15px; font-weight: 600; }
-        .info-box p.sub { font-size: 13px; color: #555; margin-top: 2px; }
+        .accent-bar { height: 3px; background: linear-gradient(90deg, #1a1a2e 0%, #e2b96f 100%); border-radius: 2px; margin-bottom: 32px; }
 
-        table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
-        thead tr { background: #1a1a2e; color: white; }
-        th { padding: 10px; text-align: left; font-size: 13px; }
-        td { padding: 10px; font-size: 13px; border-bottom: 1px solid #eee; }
+        .bill-row { display: flex; justify-content: space-between; margin-bottom: 32px; }
+        .lbl { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: #aaa; margin-bottom: 8px; }
+        .bill-name { font-size: 18px; font-weight: 500; }
+        .bill-info { font-size: 13px; color: #666; margin-top: 3px; line-height: 1.6; }
+        .inv-num { font-family: 'Playfair Display', serif; font-size: 30px; }
+        .inv-date { font-size: 13px; color: #888; margin-top: 4px; }
 
-        .totals { display: flex; justify-content: flex-end; }
-        .totals table { width: 280px; }
-        .totals td { border: none; padding: 6px 10px; }
-        .totals tr.final td { font-weight: bold; font-size: 15px; border-top: 2px solid #1a1a2e; }
-
-        .status-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        .paid { background: #d4edda; color: #155724; }
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 3px; font-size: 11px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; margin-top: 6px; }
         .pending { background: #fff3cd; color: #856404; }
+        .paid { background: #d4edda; color: #155724; }
 
-        .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #aaa; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 28px; }
+        thead tr { background: #1a1a2e; }
+        thead th { padding: 12px 14px; text-align: left; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: #e2b96f; font-weight: 400; }
+        tbody td { padding: 13px 14px; font-size: 13px; border-bottom: 1px solid #f0f0f0; }
+        tbody tr:last-child td { border-bottom: none; }
+
+        .bottom-row { display: flex; justify-content: space-between; align-items: flex-start; margin-top: 8px; margin-bottom: 28px; }
+        .totals-area { width: 240px; }
+        .tot-row { display: flex; justify-content: space-between; font-size: 13px; color: #555; padding: 5px 0; }
+        .tot-row.final { border-top: 2px solid #1a1a2e; margin-top: 6px; padding-top: 10px; font-weight: 500; font-size: 16px; color: #1a1a2e; }
+
+        .divider { height: 1px; background: #eee; margin-bottom: 20px; }
+        .footer { display: flex; justify-content: space-between; align-items: center; }
+        .footer-contact { display: flex; gap: 24px; }
+        .footer-item { font-size: 12px; color: #888; }
+        .powered { font-size: 11px; color: #bbb; font-style: italic; }
+        .powered span { color: #e2b96f; font-style: normal; font-weight: 500; }
+        .bottom-bar { height: 6px; background: linear-gradient(90deg, #1a1a2e 55%, #e2b96f 100%); border-radius: 3px; margin-top: 28px; }
 
         @media print {
             .no-print { display: none; }
-            body { padding: 20px; }
+            body { background: white; }
+            .page { padding: 20px; }
         }
     </style>
 </head>
 <body>
 
-    <!-- Print Button -->
-    <div class="no-print" style="margin-bottom: 20px;">
-        <button onclick="window.print()"
-                style="background: #1a1a2e; color: white; padding: 10px 20px;
-                border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
-            🖨 Print / Save as PDF
-        </button>
-        <a href="/invoices/{{ invoice['id'] }}"
-           style="margin-left: 12px; font-size: 14px; color: #888; text-decoration: none;">
-            ← Back
-        </a>
-    </div>
+<!-- Print Button -->
+<div class="no-print" style="background: #f0f0f0; padding: 12px 48px; display: flex; gap: 12px;">
+    <button onclick="window.print()"
+            style="background: #1a1a2e; color: white; padding: 10px 20px;
+            border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
+        🖨 Print / Save as PDF
+    </button>
+    <a href="/invoices/{{ invoice['id'] }}"
+       style="padding: 10px 16px; font-size: 14px; color: #888; text-decoration: none;">
+        ← Back
+    </a>
+</div>
+
+<div class="page">
 
     <!-- Header -->
-    <div class="header">
+    <div class="inv-header">
         <div>
             {% if company['logo_filename'] %}
-            <img src="/static/{{ company['logo_filename'] }}" height="50" style="border-radius: 6px;">
-            {% else %}
-            <p class="brand">⚙ {{ company['company_name'] }}</p>
+            <img src="/static/{{ company['logo_filename'] }}" height="55"
+                 style="border-radius: 6px; margin-bottom: 6px; display: block;">
             {% endif %}
-            <p style="font-size: 13px; color: #555; margin-top: 6px;">{{ company['company_name'] }}</p>
+            <div class="company-name">{{ company['company_name'] }}</div>
             {% if company['gstin'] %}
-            <p style="font-size: 12px; color: #888;">GSTIN: {{ company['gstin'] }}</p>
+            <div style="font-size: 12px; color: #888; margin-top: 4px;">
+                GSTIN: {{ company['gstin'] }}
+            </div>
             {% endif %}
-            <p style="font-size: 12px; color: #888;">{{ company['company_phone'] or '' }}</p>
-            <p style="font-size: 12px; color: #888;">{{ company['company_email'] or '' }}</p>
-            <p style="font-size: 12px; color: #888;">{{ company['company_address'] or '' }}</p>
+            <div style="font-size: 12px; color: #888; margin-top: 2px;">
+                {{ company['company_address'] or '' }}
+            </div>
         </div>
-        <div class="invoice-title">
+        <div class="inv-title-area">
             <h1>INVOICE</h1>
-            <p>INV-{{ invoice['id'] }}</p>
-            <p>{{ invoice['created_at'][:10] }}</p>
-            <span class="status-badge {{ invoice['status'] }}">
-                {{ invoice['status'] | upper }}
-            </span>
+            <div class="inv-id">{{ company['invoice_prefix'] }}{{ '%07d' % invoice['id'] }}</div>
+            <div class="inv-id">{{ invoice['created_at'][:10] }}</div>
+            <span class="badge {{ invoice['status'] }}">{{ invoice['status'] | upper }}</span>
         </div>
     </div>
 
-    <!-- Info -->
-    <div class="info-grid">
-        <div class="info-box">
-            <p class="label">Bill To</p>
-            <p class="value">{{ invoice['customer_name'] }}</p>
-            <p class="sub">{{ invoice['customer_email'] or '' }}</p>
-            <p class="sub">{{ invoice['customer_phone'] or '' }}</p>
-            <p class="sub">{{ invoice['customer_address'] or '' }}</p>
+    <div class="accent-bar"></div>
+
+    <!-- Bill To -->
+    <div class="bill-row">
+        <div>
+            <div class="lbl">Bill To</div>
+            <div class="bill-name">{{ invoice['customer_name'] }}</div>
+            <div class="bill-info">{{ invoice['customer_email'] or '' }}</div>
+            <div class="bill-info">{{ invoice['customer_phone'] or '' }}</div>
+            <div class="bill-info">{{ invoice['customer_address'] or '' }}</div>
         </div>
-        <div class="info-box" style="text-align: right;">
-            <p class="label">Order Reference</p>
-            <p class="value">#{{ invoice['order_id'] }}</p>
+        <div style="text-align: right;">
+            <div class="lbl">Invoice Number</div>
+            <div class="inv-num">{{ '%07d' % invoice['id'] }}</div>
+            <div class="inv-date">Order #{{ invoice['order_id'] }}</div>
         </div>
     </div>
 
-    <!-- Items -->
+    <!-- Items Table -->
     <table>
         <thead>
             <tr>
                 <th>Product</th>
+                <th>Price</th>
                 <th>Qty</th>
-                <th>Unit Price</th>
                 <th>GST %</th>
                 <th>GST Amt</th>
-                <th>Subtotal</th>
+                <th>Total</th>
             </tr>
         </thead>
         <tbody>
             {% for item in items %}
             <tr>
                 <td>{{ item['product_name'] }}</td>
-                <td>{{ item['quantity'] }}</td>
                 <td>₹{{ "%.2f"|format(item['unit_price']) }}</td>
+                <td>{{ item['quantity'] }}</td>
                 <td>{{ item['gst_percent'] }}%</td>
                 <td>₹{{ "%.2f"|format(item['unit_price'] * item['quantity'] * item['gst_percent'] / 100) }}</td>
                 <td>₹{{ "%.2f"|format(item['unit_price'] * item['quantity'] * (1 + item['gst_percent']/100)) }}</td>
@@ -128,27 +141,48 @@
         </tbody>
     </table>
 
-    <!-- Totals -->
-    <div class="totals">
-        <table>
-            <tr>
-                <td style="color: #888;">Subtotal:</td>
-                <td style="text-align: right;">₹{{ "%.2f"|format(invoice['subtotal']) }}</td>
-            </tr>
-            <tr>
-                <td style="color: #888;">GST Amount:</td>
-                <td style="text-align: right;">₹{{ "%.2f"|format(invoice['gst_amount']) }}</td>
-            </tr>
-            <tr class="final">
-                <td>Total:</td>
-                <td style="text-align: right;">₹{{ "%.2f"|format(invoice['total_amount']) }}</td>
-            </tr>
-        </table>
+    <!-- Totals + Payment Terms -->
+    <div class="bottom-row">
+        <div>
+            <div class="lbl">Payment Terms</div>
+            <div style="font-size: 13px; color: #555; line-height: 1.8;">
+                <div>Payment due within 30 days.</div>
+                <div>Thank you for your business!</div>
+            </div>
+        </div>
+        <div class="totals-area">
+            <div class="tot-row">
+                <span>Subtotal</span>
+                <span>₹{{ "%.2f"|format(invoice['subtotal']) }}</span>
+            </div>
+            <div class="tot-row">
+                <span>GST Amount</span>
+                <span>₹{{ "%.2f"|format(invoice['gst_amount']) }}</span>
+            </div>
+            <div class="tot-row final">
+                <span>Total</span>
+                <span>₹{{ "%.2f"|format(invoice['total_amount']) }}</span>
+            </div>
+        </div>
     </div>
 
+    <div class="divider"></div>
+
+    <!-- Footer -->
     <div class="footer">
-        <p>Thank you for your business! — Generated by FlowForge</p>
+        <div class="footer-contact">
+            {% if company['company_phone'] %}
+            <div class="footer-item">📞 {{ company['company_phone'] }}</div>
+            {% endif %}
+            {% if company['company_email'] %}
+            <div class="footer-item">✉ {{ company['company_email'] }}</div>
+            {% endif %}
+        </div>
+        <div class="powered">Generated by <span>FlowForge</span></div>
     </div>
 
+    <div class="bottom-bar"></div>
+
+</div>
 </body>
 </html>

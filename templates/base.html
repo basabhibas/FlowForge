@@ -1180,6 +1180,18 @@
                 <span class="nav-label">Vendors</span>
             </a>
 
+            <a href="/purchase-orders" class="nav-item {% if 'purchase-orders' in request.path %}active{% endif %}"
+                data-tooltip="Purchase Orders">
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="16 16 12 12 8 16" />
+                        <line x1="12" y1="12" x2="12" y2="21" />
+                        <path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3" />
+                    </svg>
+                </span>
+                <span class="nav-label">Purchase Orders</span>
+            </a>
+
             <div class="nav-section-label">Sales</div>
 
             <a href="/customers" class="nav-item {% if 'customers' in request.path %}active{% endif %}"
@@ -1207,18 +1219,6 @@
                 <span class="nav-label">Orders</span>
             </a>
 
-            <a href="/purchase-orders" class="nav-item {% if 'purchase-orders' in request.path %}active{% endif %}"
-                data-tooltip="Purchase Orders">
-                <span class="nav-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="16 16 12 12 8 16" />
-                        <line x1="12" y1="12" x2="12" y2="21" />
-                        <path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3" />
-                    </svg>
-                </span>
-                <span class="nav-label">Purchase Orders</span>
-            </a>
-
             <a href="/invoices" class="nav-item {% if 'invoices' in request.path %}active{% endif %}"
                 data-tooltip="Invoices">
                 <span class="nav-icon">
@@ -1231,20 +1231,6 @@
                     </svg>
                 </span>
                 <span class="nav-label">Invoices</span>
-            </a>
-
-            <div class="nav-section-label">Insights</div>
-
-            <a href="/reports" class="nav-item {% if request.endpoint == 'reports' %}active{% endif %}"
-                data-tooltip="Reports">
-                <span class="nav-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="20" x2="18" y2="10" />
-                        <line x1="12" y1="20" x2="12" y2="4" />
-                        <line x1="6" y1="20" x2="6" y2="14" />
-                    </svg>
-                </span>
-                <span class="nav-label">Reports</span>
             </a>
 
             <div class="nav-section-label">System</div>
@@ -1295,9 +1281,21 @@
         <header class="topbar">
             <div class="topbar-title">
                 {% block page_title %}Dashboard{% endblock %}
+                {% if session.get('business_name') %}
+                <span>{{ session.get('business_name') }}</span>
+                {% endif %}
                 {% block page_subtitle %}{% endblock %}
             </div>
-            {% block topbar_actions %}{% endblock %}
+            {% block topbar_actions %}
+            {% if session.get('username') %}
+            <div style="display:flex; gap:10px; align-items:center;">
+                <div class="text-muted" style="margin-right:8px">Signed in as <strong>{{ session.get('username') }}</strong></div>
+                <a href="{{ url_for('logout') }}" class="btn btn-outline">Logout</a>
+            </div>
+            {% else %}
+            <a href="{{ url_for('login') }}" class="btn btn-primary">Login</a>
+            {% endif %}
+            {% endblock %}
         </header>
 
         <!-- Flash Messages -->
@@ -1321,6 +1319,145 @@
     </div>
 
     <!-- Sidebar collapse JS -->
+    {% if not session.get('user_id') and request.endpoint not in ['login','signup','static'] %}
+    <style>
+        .auth-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 2200;
+            display: none; /* hidden until timer fires */
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .auth-modal {
+            display: inline-block; /* size to content */
+            width: auto;
+            max-width: 90%; /* never overflow viewport */
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            box-shadow: var(--shadow-lg);
+            vertical-align: middle;
+            text-align: center;
+        }
+
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .auth-form .form-control {
+            width: 320px;
+            max-width: 90%;
+        }
+
+        .auth-actions { display:flex; gap:8px; justify-content:center; margin-top:12px }
+
+        .auth-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:12px }
+
+        .auth-toggle { background: transparent; border: none; color: var(--accent); cursor: pointer; font-weight:700 }
+
+        @media (max-width:640px) {
+            .auth-modal { padding: 12px; }
+            .auth-forms { grid-template-columns: 1fr; }
+        }
+    </style>
+
+    <div id="authOverlay" class="auth-overlay" aria-modal="true" role="dialog">
+        <div class="card auth-modal">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+                <div>
+                    <h3 style="margin-bottom:6px;">Please sign in to continue</h3>
+                    <div class="text-muted">You must be signed in to use FlowForge. New here? Create an account below.</div>
+                </div>
+                <div></div>
+            </div>
+
+            <div style="margin-top:16px;">
+                <form method="post" action="{{ url_for('login') }}" class="auth-form">
+                    <div id="loginSection">
+                        <div class="form-group" style="width:100%; display:flex; flex-direction:column; align-items:center;">
+                            <label class="form-label">Email address</label>
+                            <input name="username" class="form-control" placeholder="email@example.com">
+                        </div>
+                        <div class="form-group mt-8" style="width:100%; display:flex; flex-direction:column; align-items:center;">
+                            <label class="form-label">Password</label>
+                            <input type="password" name="password" class="form-control" placeholder="password">
+                        </div>
+                        <div class="auth-actions">
+                            <button type="submit" class="btn btn-primary">Sign in</button>
+                            <button type="button" id="showForgot" class="btn btn-outline">Forgot?</button>
+                        </div>
+                    </div>
+                </form>
+
+                <form id="forgotSection" method="post" action="{{ url_for('forgot_password') }}" class="auth-form" style="display:none; width:100%;">
+                    <div class="form-group" style="width:100%; display:flex; flex-direction:column; align-items:center;">
+                        <label class="form-label">Email address</label>
+                        <input name="username" class="form-control" placeholder="email@example.com">
+                    </div>
+                    <div class="auth-actions">
+                        <button type="submit" class="btn btn-primary">Send reset link</button>
+                        <button type="button" id="backToLogin" class="btn btn-outline">Back</button>
+                    </div>
+                </form>
+
+                <div style="margin-top:12px; display:flex; justify-content:center;">
+                    <a href="{{ url_for('signup') }}" class="btn btn-success">Create an account</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Show auth overlay after a short delay on the site if user is not logged in.
+        (function(){
+            const overlay = document.getElementById('authOverlay');
+            function showOverlay(){
+                if(!overlay) return;
+                overlay.style.display = 'flex';
+                try { document.documentElement.style.overflow = 'hidden'; } catch(e){}
+            }
+
+            const KEY = 'ff_first_visit_ts';
+            let ts = localStorage.getItem(KEY);
+            if(!ts){
+                localStorage.setItem(KEY, Date.now());
+                ts = localStorage.getItem(KEY);
+            }
+
+            const elapsed = Date.now() - Number(ts || 0);
+            const delay = 5 * 1000; // 5s for testing
+
+            if(elapsed >= delay){
+                showOverlay();
+            } else {
+                setTimeout(showOverlay, delay - elapsed);
+            }
+
+            const showForgot = document.getElementById('showForgot');
+            const backToLogin = document.getElementById('backToLogin');
+            const loginSection = document.getElementById('loginSection');
+            const forgotSection = document.getElementById('forgotSection');
+            if(showForgot){
+                showForgot.addEventListener('click', function(){
+                    loginSection.style.display = 'none';
+                    forgotSection.style.display = 'flex';
+                });
+            }
+            if(backToLogin){
+                backToLogin.addEventListener('click', function(){
+                    forgotSection.style.display = 'none';
+                    loginSection.style.display = 'block';
+                });
+            }
+        })();
+    </script>
+    {% endif %}
     <script>
         const sidebar = document.getElementById('sidebar');
         const mainWrapper = document.getElementById('mainWrapper');

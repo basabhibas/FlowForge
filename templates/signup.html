@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}Sign up{% endblock %}
+
+{% block page_title %}Create account{% endblock %}
+
+{% block content %}
+<div style="max-width:520px; margin:40px auto;">
+    <div class="card">
+        <h2 class="section-title">Create a new account</h2>
+        <p class="text-muted">Register so you can manage your FlowForge instance.</p>
+        <form method="post" style="margin-top:16px;">
+            <div class="form-group">
+                <label class="form-label">Email address</label>
+                <input name="username" class="form-control" placeholder="email@example.com">
+            </div>
+            <div class="form-group mt-8">
+                <label class="form-label">Business name</label>
+                <input name="business_name" class="form-control" placeholder="Your business name">
+            </div>
+            <div class="form-group mt-8">
+                <label class="form-label">Password</label>
+                <input type="password" name="password" class="form-control" placeholder="Password">
+            </div>
+            <div class="form-group mt-8">
+                <label class="form-label">Confirm password</label>
+                <input type="password" name="password2" class="form-control" placeholder="Repeat password">
+            </div>
+            <div style="margin-top:18px; display:flex; gap:8px; justify-content:flex-end;">
+                <a href="/" class="btn btn-outline">Cancel</a>
+                <button class="btn btn-primary" type="submit">Create account</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

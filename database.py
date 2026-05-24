@@ -153,6 +153,28 @@ def init_db():
         )
     ''')
 
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            business_name TEXT,
+            password_hash TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+
+    # Add business_name to users if missing
+    existing_user_columns = [
+        row[1] for row in cursor.execute('PRAGMA table_info(users)').fetchall()
+    ]
+    if 'business_name' not in existing_user_columns:
+        cursor.execute(
+            'ALTER TABLE users ADD COLUMN business_name TEXT'
+        )
+        cursor.execute(
+            "UPDATE users SET business_name = 'My Business' WHERE business_name IS NULL"
+        )
+
     # ── Default Settings Row ──────────────────────────────────────
     cursor.execute('''
         INSERT OR IGNORE INTO settings (id, company_name, invoice_prefix)

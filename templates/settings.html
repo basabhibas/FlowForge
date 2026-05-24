@@ -64,4 +64,44 @@
         </div>
     </form>
 </div>
+
+{% if account_user %}
+<div class="card" style="max-width: 680px; margin-top:32px;">
+    <div class="card-title mb-16">Account Settings</div>
+    <div class="card-subtitle mb-24" style="margin-top:-12px;">Update your email, business name, or password. Delete the account if you no longer need it.</div>
+
+    <form method="POST" action="{{ url_for('account_update') }}">
+        <div class="form-grid">
+            <div class="form-group form-full">
+                <label class="form-label">Email address</label>
+                <input class="form-control" type="email" name="username"
+                       value="{{ account_user['username'] or '' }}"
+                       placeholder="email@example.com">
+            </div>
+            <div class="form-group form-full">
+                <label class="form-label">Business name</label>
+                <input class="form-control" type="text" name="business_name"
+                       value="{{ account_user['business_name'] or '' }}"
+                       placeholder="Your business name">
+            </div>
+            <div class="form-group form-full">
+                <label class="form-label">New password</label>
+                <input class="form-control" type="password" name="new_password" placeholder="Leave blank to keep current password">
+            </div>
+            <div class="form-group form-full">
+                <label class="form-label">Confirm new password</label>
+                <input class="form-control" type="password" name="confirm_password" placeholder="Confirm new password">
+            </div>
+        </div>
+
+        <div class="actions-row" style="justify-content:space-between; gap:12px; flex-wrap:wrap;">
+            <button type="submit" class="btn btn-primary">Update Account</button>
+        </div>
+    </form>
+
+    <form method="POST" action="{{ url_for('account_delete') }}" onsubmit="return confirm('Delete your account? This cannot be undone.')" style="margin-top:16px; display:flex; justify-content:flex-end;">
+        <button type="submit" class="btn btn-danger">Delete Account</button>
+    </form>
+</div>
+{% endif %}
 {% endblock %}
