@@ -1,74 +1,67 @@
 {% extends "base.html" %}
-
 {% block title %}Settings{% endblock %}
+{% block page_title %}Settings{% endblock %}
+{% block page_subtitle %}<span>Company configuration</span>{% endblock %}
 
 {% block content %}
-<div class="card">
-    <h2>Company Settings</h2>
-    <p style="color: #888; font-size: 14px; margin-top: 4px;">
-        Yeh info invoices pe automatically dikhegi.
-    </p>
+<div class="card" style="max-width: 680px;">
+    <div class="card-title mb-16">Company Information</div>
+    <div class="card-subtitle mb-24" style="margin-top:-12px;">Yeh info invoices pe automatically dikhegi.</div>
 
-    <form method="POST" action="/settings" enctype="multipart/form-data" style="margin-top: 24px;">
-
-        <div class="form-group">
-            <label>Company Name</label>
-            <input type="text" name="company_name"
-                   value="{{ settings['company_name'] or '' }}"
-                   placeholder="Jaise: ABC Traders, XYZ Pvt Ltd...">
-        </div>
-
-        <div class="form-group">
-            <label>Company Email</label>
-            <input type="email" name="company_email"
-                   value="{{ settings['company_email'] or '' }}"
-                   placeholder="company@example.com">
-        </div>
-
-        <div class="form-group">
-            <label>Company Phone</label>
-            <input type="text" name="company_phone"
-                   value="{{ settings['company_phone'] or '' }}"
-                   placeholder="9876543210">
-        </div>
-
-        <div class="form-group">
-            <label>Company Address</label>
-            <textarea name="company_address" rows="3"
-                      placeholder="Full address...">{{ settings['company_address'] or '' }}</textarea>
-        </div>
-
-        <div class="form-group">
-            <label>GSTIN</label>
-            <input type="text" name="gstin"
-                   value="{{ settings['gstin'] or '' }}"
-                   placeholder="22AAAAA0000A1Z5">
-        </div>
-
-        <div class="form-group">
-            <label>Invoice Prefix</label>
-            <input type="text" name="invoice_prefix"
-                   value="{{ settings['invoice_prefix'] or 'INV-' }}"
-                   placeholder="INV-, BILL-, etc.">
-        </div>
-
-        <div class="form-group">
-            <label>Company Logo</label>
-            {% if settings['logo_filename'] %}
-            <div style="margin-bottom: 10px;">
-                <img src="/static/{{ settings['logo_filename'] }}" height="50" style="border-radius: 6px;">
-                <p style="font-size: 12px; color: #888; margin-top: 4px;">Current logo</p>
+    <form method="POST" action="/settings" enctype="multipart/form-data">
+        <div class="form-grid">
+            <div class="form-group form-full">
+                <label class="form-label">Company Name</label>
+                <input class="form-control" type="text" name="company_name"
+                       value="{{ settings['company_name'] or '' }}"
+                       placeholder="e.g. ABC Traders, XYZ Pvt Ltd...">
             </div>
-            {% endif %}
-            <input type="file" name="logo" accept="image/*"
-                   style="font-size: 14px;">
-            <p style="font-size: 12px; color: #888; margin-top: 4px;">
-                PNG ya JPG — recommended size: 200x60px
-            </p>
+            <div class="form-group">
+                <label class="form-label">Company Email</label>
+                <input class="form-control" type="email" name="company_email"
+                       value="{{ settings['company_email'] or '' }}"
+                       placeholder="company@example.com">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Company Phone</label>
+                <input class="form-control" type="text" name="company_phone"
+                       value="{{ settings['company_phone'] or '' }}"
+                       placeholder="9876543210">
+            </div>
+            <div class="form-group form-full">
+                <label class="form-label">Company Address</label>
+                <textarea class="form-control" name="company_address"
+                          placeholder="Full address...">{{ settings['company_address'] or '' }}</textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">GSTIN</label>
+                <input class="form-control" type="text" name="gstin"
+                       value="{{ settings['gstin'] or '' }}"
+                       placeholder="22AAAAA0000A1Z5">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Invoice Prefix</label>
+                <input class="form-control" type="text" name="invoice_prefix"
+                       value="{{ settings['invoice_prefix'] or 'INV-' }}"
+                       placeholder="INV-, BILL-, etc.">
+            </div>
+            <div class="form-group form-full">
+                <label class="form-label">Company Logo</label>
+                {% if settings['logo_filename'] %}
+                <div style="margin-bottom:12px; display:flex; align-items:center; gap:12px;">
+                    <img src="/static/{{ settings['logo_filename'] }}" height="48"
+                         style="border-radius: var(--radius-sm); border: 1px solid var(--border);">
+                    <span class="td-muted" style="font-size:12px;">Current logo</span>
+                </div>
+                {% endif %}
+                <input class="form-control" type="file" name="logo" accept="image/*">
+                <span class="form-hint">PNG ya JPG — recommended: 200×60px</span>
+            </div>
         </div>
 
-        <button type="submit">Save Settings</button>
-
+        <div class="actions-row">
+            <button type="submit" class="btn btn-primary">Save Settings</button>
+        </div>
     </form>
 </div>
 {% endblock %}

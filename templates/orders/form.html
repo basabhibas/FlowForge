@@ -1,17 +1,17 @@
 {% extends "base.html" %}
-
 {% block title %}New Order{% endblock %}
+{% block page_title %}Create Order{% endblock %}
+{% block topbar_actions %}
+<a href="/orders" class="btn btn-outline btn-sm">← Back to Orders</a>
+{% endblock %}
 
 {% block content %}
-<div class="card">
-    <h2>Naya Order Banao</h2>
+<div class="card" style="max-width: 760px;">
+    <form method="POST" action="/orders/add">
 
-    <form method="POST" action="/orders/add" style="margin-top: 20px;">
-
-        <div class="form-group">
-            <label>Customer Select Karo</label>
-            <select name="customer_id" style="width: 100%; padding: 10px 12px;
-                border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+        <div class="form-group mb-24">
+            <label class="form-label">Customer *</label>
+            <select class="form-control" name="customer_id">
                 <option value="">-- Customer Chuno --</option>
                 {% for customer in customers %}
                 <option value="{{ customer['id'] }}">{{ customer['name'] }}</option>
@@ -19,15 +19,13 @@
             </select>
         </div>
 
-        <h3 style="margin-top: 24px; margin-bottom: 16px; font-size: 15px;">Order Items</h3>
+        <div class="card-title mb-16">Order Items</div>
 
         <div id="items-container">
-            <div class="order-item" style="display: grid; grid-template-columns: 2fr 1fr;
-                 gap: 12px; margin-bottom: 12px;">
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label>Product</label>
-                    <select name="product_id[]" style="width: 100%; padding: 10px 12px;
-                        border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+            <div class="order-item" style="display:grid; grid-template-columns:2fr 1fr; gap:12px; margin-bottom:12px;">
+                <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label">Product</label>
+                    <select class="form-control" name="product_id[]">
                         <option value="">-- Product Chuno --</option>
                         {% for product in products %}
                         <option value="{{ product['id'] }}">
@@ -36,29 +34,27 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label>Quantity</label>
-                    <input type="number" name="quantity[]" min="1" value="1"
-                           style="width: 100%; padding: 10px 12px;
-                           border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label">Quantity</label>
+                    <input class="form-control" type="number" name="quantity[]" min="1" value="1">
                 </div>
             </div>
         </div>
 
-        <button type="button" onclick="addItem()"
-                style="background: #f0f0f0; color: #333; padding: 8px 16px;
-                border: 1px solid #ddd; border-radius: 6px; font-size: 13px;
-                cursor: pointer; margin-bottom: 20px;">
+        <button type="button" onclick="addItem()" class="btn btn-outline btn-sm" style="margin-bottom:24px;">
             + Add Another Item
         </button>
 
-        <br>
-        <button type="submit">Create Order</button>
-        <a href="/orders" class="btn-cancel">Cancel</a>
+        <hr class="divider">
 
+        <div class="actions-row">
+            <button type="submit" class="btn btn-primary">Create Order</button>
+            <a href="/orders" class="btn btn-outline">Cancel</a>
+        </div>
     </form>
 </div>
 
+{% block scripts %}
 <script>
 function addItem() {
     const container = document.getElementById('items-container');
@@ -66,7 +62,18 @@ function addItem() {
     const newItem = firstItem.cloneNode(true);
     newItem.querySelectorAll('select').forEach(s => s.selectedIndex = 0);
     newItem.querySelectorAll('input').forEach(i => i.value = 1);
+
+    // Add a remove button
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.textContent = '✕ Remove';
+    removeBtn.className = 'btn btn-danger btn-sm';
+    removeBtn.style.marginTop = '4px';
+    removeBtn.onclick = () => newItem.remove();
+    newItem.appendChild(removeBtn);
+
     container.appendChild(newItem);
 }
 </script>
+{% endblock %}
 {% endblock %}

@@ -1,84 +1,75 @@
 {% extends "base.html" %}
-
 {% block title %}Purchase Order #{{ po['id'] }}{% endblock %}
+{% block page_title %}PO <span class="text-accent">#{{ po['id'] }}</span>{% endblock %}
+{% block topbar_actions %}
+<a href="/purchase-orders" class="btn btn-outline btn-sm">← Back to POs</a>
+{% endblock %}
 
 {% block content %}
 <div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h2>Purchase Order #{{ po['id'] }}</h2>
-        <span style="
-            background: {% if po['status'] == 'received' %}#d4edda{% elif po['status'] == 'pending' %}#fff3cd{% else %}#f8d7da{% endif %};
-            color: {% if po['status'] == 'received' %}#155724{% elif po['status'] == 'pending' %}#856404{% else %}#721c24{% endif %};
-            padding: 4px 12px; border-radius: 4px; font-size: 13px;">
-            {{ po['status'] }}
-        </span>
+    <!-- Header -->
+    <div class="info-grid mb-24">
+        <div class="info-item">
+            <div class="label">Vendor</div>
+            <div class="value">{{ po['vendor_name'] }}</div>
+        </div>
+        <div class="info-item">
+            <div class="label">Date</div>
+            <div class="value">{{ po['created_at'][:10] }}</div>
+        </div>
+        <div class="info-item">
+            <div class="label">Status</div>
+            <div class="value">
+                {% if po['status'] == 'received' %}
+                    <span class="badge badge-green">Received</span>
+                {% else %}
+                    <span class="badge badge-yellow">Pending</span>
+                {% endif %}
+            </div>
+        </div>
     </div>
 
-    <div style="margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-        <div>
-            <p style="font-size: 13px; color: #888;">Vendor</p>
-            <p style="font-size: 15px; font-weight: 600;">{{ po['vendor_name'] }}</p>
-        </div>
-        <div>
-            <p style="font-size: 13px; color: #888;">Date</p>
-            <p style="font-size: 15px;">{{ po['created_at'][:10] }}</p>
+    <!-- Items Table -->
+    <div class="card-title mb-16">Items</div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr><th>Product</th><th>Qty</th><th>Purchase Price</th><th>GST %</th><th>GST Amount</th><th>Subtotal</th></tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td class="font-semibold">{{ item['product_name'] }}</td>
+                    <td>{{ item['quantity'] }}</td>
+                    <td>₹{{ "%.2f"|format(item['unit_price']) }}</td>
+                    <td class="td-muted">{{ item['gst_percent'] }}%</td>
+                    <td>₹{{ "%.2f"|format(item['unit_price'] * item['quantity'] * item['gst_percent'] / 100) }}</td>
+                    <td class="font-semibold text-accent">₹{{ "%.2f"|format(item['unit_price'] * item['quantity'] * (1 + item['gst_percent']/100)) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Total -->
+    <div class="flex justify-between" style="margin-top:20px;">
+        <div></div>
+        <div class="totals-box">
+            <div class="totals-row grand">
+                <span>Total (incl. GST)</span>
+                <span>₹{{ "%.2f"|format(po['total_amount']) }}</span>
+            </div>
         </div>
     </div>
 
-    <h3 style="margin-top: 24px; margin-bottom: 12px; font-size: 15px;">Items</h3>
-
-    <table style="width: 100%; border-collapse: collapse;">
-        <thead>
-            <tr style="background: #f0f0f0;">
-                <th style="padding: 10px; text-align: left; font-size: 13px;">Product</th>
-                <th style="padding: 10px; text-align: left; font-size: 13px;">Qty</th>
-                <th style="padding: 10px; text-align: left; font-size: 13px;">Purchase Price</th>
-                <th style="padding: 10px; text-align: left; font-size: 13px;">GST %</th>
-                <th style="padding: 10px; text-align: left; font-size: 13px;">GST Amount</th>
-                <th style="padding: 10px; text-align: left; font-size: 13px;">Subtotal</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in items %}
-            <tr style="border-bottom: 1px solid #eee;">
-                <td style="padding: 10px; font-size: 14px;">{{ item['product_name'] }}</td>
-                <td style="padding: 10px; font-size: 14px;">{{ item['quantity'] }}</td>
-                <td style="padding: 10px; font-size: 14px;">₹{{ item['unit_price'] }}</td>
-                <td style="padding: 10px; font-size: 14px;">{{ item['gst_percent'] }}%</td>
-                <td style="padding: 10px; font-size: 14px;">
-                    ₹{{ "%.2f"|format(item['unit_price'] * item['quantity'] * item['gst_percent'] / 100) }}
-                </td>
-                <td style="padding: 10px; font-size: 14px;">
-                    ₹{{ "%.2f"|format(item['unit_price'] * item['quantity'] * (1 + item['gst_percent']/100)) }}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-        <tfoot>
-            <tr>
-                <td colspan="5" style="padding: 10px; text-align: right;
-                    font-weight: 600; font-size: 14px;">Total (with GST):</td>
-                <td style="padding: 10px; font-weight: 600; font-size: 15px;">
-                    ₹{{ "%.2f"|format(po['total_amount']) }}
-                </td>
-            </tr>
-        </tfoot>
-    </table>
-
-    <div style="margin-top: 20px;">
+    <!-- Actions -->
+    <div class="actions-row">
         {% if po['status'] == 'pending' %}
-        <a href="/purchase-orders/receive/{{ po['id'] }}"
-           style="background: #28a745; color: white; padding: 10px 20px;
-           border-radius: 6px; text-decoration: none; font-size: 14px;">
-            ✓ Receive Stock
-        </a>
-        <a href="/purchase-orders/delete/{{ po['id'] }}"
-           style="margin-left: 12px; font-size: 14px; color: #dc3545;"
-           onclick="return confirm('Delete karna chahte ho?')">Delete</a>
+        <a href="/purchase-orders/receive/{{ po['id'] }}" class="btn btn-success">✓ Receive Stock</a>
+        <a href="/purchase-orders/delete/{{ po['id'] }}" class="btn btn-danger"
+           onclick="return confirm('Delete karna chahte ho?')">Delete PO</a>
         {% endif %}
-        <a href="/purchase-orders" style="margin-left: 12px; font-size: 14px; color: #888;">
-            ← Back to POs
-        </a>
+        <a href="/purchase-orders" class="btn btn-outline">← Back</a>
     </div>
 </div>
 {% endblock %}

@@ -1,76 +1,75 @@
 {% extends "base.html" %}
-
 {% block title %}Order #{{ order['id'] }}{% endblock %}
+{% block page_title %}Order <span class="text-accent">#{{ order['id'] }}</span>{% endblock %}
+{% block topbar_actions %}
+<a href="/orders" class="btn btn-outline btn-sm">← Back to Orders</a>
+{% endblock %}
 
 {% block content %}
 <div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h2>Order #{{ order['id'] }}</h2>
-        <span style="
-            background: {% if order['status'] == 'confirmed' %}#d4edda{% elif order['status'] == 'pending' %}#fff3cd{% else %}#f8d7da{% endif %};
-            color: {% if order['status'] == 'confirmed' %}#155724{% elif order['status'] == 'pending' %}#856404{% else %}#721c24{% endif %};
-            padding: 4px 12px; border-radius: 4px; font-size: 13px;">
-            {{ order['status'] }}
-        </span>
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-24">
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="label">Customer</div>
+                <div class="value">{{ order['customer_name'] }}</div>
+            </div>
+            <div class="info-item">
+                <div class="label">Date</div>
+                <div class="value">{{ order['created_at'][:10] }}</div>
+            </div>
+            <div class="info-item">
+                <div class="label">Status</div>
+                <div class="value">
+                    {% if order['status'] == 'confirmed' %}
+                        <span class="badge badge-green">Confirmed</span>
+                    {% else %}
+                        <span class="badge badge-yellow">Pending</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div style="margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-        <div>
-            <p style="font-size: 13px; color: #888;">Customer</p>
-            <p style="font-size: 15px; font-weight: 600;">{{ order['customer_name'] }}</p>
-        </div>
-        <div>
-            <p style="font-size: 13px; color: #888;">Date</p>
-            <p style="font-size: 15px;">{{ order['created_at'][:10] }}</p>
+    <!-- Items Table -->
+    <div class="card-title mb-16">Order Items</div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr><th>Product</th><th>Quantity</th><th>Unit Price</th><th>Subtotal</th></tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td class="font-semibold">{{ item['product_name'] }}</td>
+                    <td>{{ item['quantity'] }}</td>
+                    <td>₹{{ "%.2f"|format(item['unit_price']) }}</td>
+                    <td class="font-semibold text-accent">₹{{ "%.2f"|format(item['quantity'] * item['unit_price']) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Total -->
+    <div class="flex justify-between" style="margin-top: 20px;">
+        <div></div>
+        <div class="totals-box">
+            <div class="totals-row grand">
+                <span>Total Amount</span>
+                <span>₹{{ "%.2f"|format(order['total_amount']) }}</span>
+            </div>
         </div>
     </div>
 
-    <h3 style="margin-top: 24px; margin-bottom: 12px; font-size: 15px;">Order Items</h3>
-
-    <table style="width: 100%; border-collapse: collapse;">
-        <thead>
-            <tr style="background: #f0f0f0;">
-                <th style="padding: 10px; text-align: left; font-size: 13px;">Product</th>
-                <th style="padding: 10px; text-align: left; font-size: 13px;">Quantity</th>
-                <th style="padding: 10px; text-align: left; font-size: 13px;">Unit Price</th>
-                <th style="padding: 10px; text-align: left; font-size: 13px;">Subtotal</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in items %}
-            <tr style="border-bottom: 1px solid #eee;">
-                <td style="padding: 10px; font-size: 14px;">{{ item['product_name'] }}</td>
-                <td style="padding: 10px; font-size: 14px;">{{ item['quantity'] }}</td>
-                <td style="padding: 10px; font-size: 14px;">₹{{ item['unit_price'] }}</td>
-                <td style="padding: 10px; font-size: 14px;">₹{{ item['quantity'] * item['unit_price'] }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-        <tfoot>
-            <tr>
-                <td colspan="3" style="padding: 10px; text-align: right; 
-                    font-weight: 600; font-size: 14px;">Total:</td>
-                <td style="padding: 10px; font-weight: 600; font-size: 15px;">
-                    ₹{{ order['total_amount'] }}
-                </td>
-            </tr>
-        </tfoot>
-    </table>
-
-    <div style="margin-top: 20px;">
+    <!-- Actions -->
+    <div class="actions-row">
         {% if order['status'] == 'pending' %}
-        <a href="/orders/confirm/{{ order['id'] }}" 
-           style="background: #28a745; color: white; padding: 10px 20px;
-           border-radius: 6px; text-decoration: none; font-size: 14px;">
-            ✓ Confirm Order
-        </a>
-        <a href="/orders/delete/{{ order['id'] }}"
-           style="margin-left: 12px; font-size: 14px; color: #dc3545;"
-           onclick="return confirm('Delete karna chahte ho?')">Delete</a>
+        <a href="/orders/confirm/{{ order['id'] }}" class="btn btn-success">✓ Confirm Order</a>
+        <a href="/orders/delete/{{ order['id'] }}" class="btn btn-danger"
+           onclick="return confirm('Delete karna chahte ho?')">Delete Order</a>
         {% endif %}
-        <a href="/orders" style="margin-left: 12px; font-size: 14px; color: #888;">
-            ← Back to Orders
-        </a>
+        <a href="/orders" class="btn btn-outline">← Back</a>
     </div>
 </div>
 {% endblock %}

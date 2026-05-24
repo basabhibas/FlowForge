@@ -1,58 +1,44 @@
 {% extends "base.html" %}
-
 {% block title %}Invoices{% endblock %}
+{% block page_title %}Invoices{% endblock %}
+{% block page_subtitle %}<span>Billing & payments</span>{% endblock %}
 
 {% block content %}
 <div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h2>Invoices</h2>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr><th>Invoice #</th><th>Customer</th><th>Order #</th><th>Status</th><th>Total</th><th>Date</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+                {% for invoice in invoices %}
+                <tr>
+                    <td class="font-semibold text-accent">INV-{{ invoice['id'] }}</td>
+                    <td class="font-semibold">{{ invoice['customer_name'] }}</td>
+                    <td class="td-muted">#{{ invoice['order_id'] }}</td>
+                    <td>
+                        {% if invoice['status'] == 'paid' %}
+                            <span class="badge badge-green">Paid</span>
+                        {% else %}
+                            <span class="badge badge-yellow">Pending</span>
+                        {% endif %}
+                    </td>
+                    <td class="font-semibold">₹{{ "%.2f"|format(invoice['total_amount']) }}</td>
+                    <td class="td-muted">{{ invoice['created_at'][:10] }}</td>
+                    <td>
+                        <div class="flex gap-8">
+                            <a href="/invoices/{{ invoice['id'] }}" class="btn btn-outline btn-sm">View</a>
+                            {% if invoice['status'] == 'pending' %}
+                            <a href="/invoices/mark-paid/{{ invoice['id'] }}" class="btn btn-success btn-sm">Mark Paid</a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="7" class="td-empty">Koi invoice nahi abhi. Orders confirm karo — invoice automatically banega!</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-
-    <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-        <thead>
-            <tr style="background: #f0f0f0;">
-                <th style="padding: 10px; text-align: left; font-size: 13px;">Invoice #</th>
-                <th style="padding: 10px; text-align: left; font-size: 13px;">Customer</th>
-                <th style="padding: 10px; text-align: left; font-size: 13px;">Order #</th>
-                <th style="padding: 10px; text-align: left; font-size: 13px;">Status</th>
-                <th style="padding: 10px; text-align: left; font-size: 13px;">Total</th>
-                <th style="padding: 10px; text-align: left; font-size: 13px;">Date</th>
-                <th style="padding: 10px; text-align: left; font-size: 13px;">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for invoice in invoices %}
-            <tr style="border-bottom: 1px solid #eee;">
-                <td style="padding: 10px; font-size: 14px;">INV-{{ invoice['id'] }}</td>
-                <td style="padding: 10px; font-size: 14px;">{{ invoice['customer_name'] }}</td>
-                <td style="padding: 10px; font-size: 14px;">#{{ invoice['order_id'] }}</td>
-                <td style="padding: 10px;">
-                    <span style="
-                        background: {% if invoice['status'] == 'paid' %}#d4edda{% elif invoice['status'] == 'pending' %}#fff3cd{% else %}#f8d7da{% endif %};
-                        color: {% if invoice['status'] == 'paid' %}#155724{% elif invoice['status'] == 'pending' %}#856404{% else %}#721c24{% endif %};
-                        padding: 2px 8px; border-radius: 4px; font-size: 12px;">
-                        {{ invoice['status'] }}
-                    </span>
-                </td>
-                <td style="padding: 10px; font-size: 14px;">₹{{ "%.2f"|format(invoice['total_amount']) }}</td>
-                <td style="padding: 10px; font-size: 14px; color: #888;">{{ invoice['created_at'][:10] }}</td>
-                <td style="padding: 10px;">
-                    <a href="/invoices/{{ invoice['id'] }}"
-                       style="font-size: 13px; color: #1a1a2e; margin-right: 12px;">View</a>
-                    {% if invoice['status'] == 'pending' %}
-                    <a href="/invoices/mark-paid/{{ invoice['id'] }}"
-                       style="font-size: 13px; color: #28a745;">Mark Paid</a>
-                    {% endif %}
-                </td>
-            </tr>
-            {% else %}
-            <tr>
-                <td colspan="7" style="padding: 20px; text-align: center; color: #aaa; font-size: 14px;">
-                    Koi invoice nahi abhi. Orders confirm karo — invoice automatically banega!
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
 </div>
 {% endblock %}

@@ -1,67 +1,83 @@
 {% extends "base.html" %}
 
 {% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}<span>Good to see you 👋</span>{% endblock %}
+{% block topbar_actions %}
+<a href="/notes/add" class="btn btn-outline btn-sm">+ Add Note</a>
+{% endblock %}
 
 {% block content %}
 
 <!-- Stat Cards -->
-<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px;">
-
-    <div class="card" style="text-align: center;">
-        <p style="font-size: 13px; color: #888; margin-bottom: 8px;">Total Products</p>
-        <h2 style="font-size: 36px; color: #1a1a2e;">{{ total_products }}</h2>
-        <a href="/products" style="font-size: 13px; color: #e2b96f; text-decoration: none;">View All →</a>
-    </div>
-
-    <div class="card" style="text-align: center;">
-        <p style="font-size: 13px; color: #888; margin-bottom: 8px;">Total Vendors</p>
-        <h2 style="font-size: 36px; color: #1a1a2e;">{{ total_vendors }}</h2>
-        <a href="/vendors" style="font-size: 13px; color: #e2b96f; text-decoration: none;">View All →</a>
-    </div>
-
-    <div class="card" style="text-align: center;">
-        <p style="font-size: 13px; color: #888; margin-bottom: 8px;">Total Customers</p>
-        <h2 style="font-size: 36px; color: #1a1a2e;">{{ total_customers }}</h2>
-        <a href="/customers" style="font-size: 13px; color: #e2b96f; text-decoration: none;">View All →</a>
-    </div>
-
+<div class="stat-grid">
+    <a href="/products" class="stat-card">
+        <div class="stat-icon gold">📦</div>
+        <div class="stat-body">
+            <div class="stat-label">Total Products</div>
+            <div class="stat-value">{{ total_products }}</div>
+            <div class="stat-link">View all →</div>
+        </div>
+    </a>
+    <a href="/vendors" class="stat-card">
+        <div class="stat-icon blue">🏭</div>
+        <div class="stat-body">
+            <div class="stat-label">Vendors</div>
+            <div class="stat-value">{{ total_vendors }}</div>
+            <div class="stat-link">View all →</div>
+        </div>
+    </a>
+    <a href="/customers" class="stat-card">
+        <div class="stat-icon green">👥</div>
+        <div class="stat-body">
+            <div class="stat-label">Customers</div>
+            <div class="stat-value">{{ total_customers }}</div>
+            <div class="stat-link">View all →</div>
+        </div>
+    </a>
 </div>
 
-<!-- Low Stock Alert -->
+<!-- Low Stock Alerts -->
 {% if low_stock %}
 <div class="card">
-    <h3 style="margin-bottom: 16px; color: #dc3545;">⚠ Low Stock Alerts</h3>
-
-    <table style="width: 100%; border-collapse: collapse;">
-        <thead>
-            <tr style="background: #f0f0f0;">
-                <th style="padding: 10px; text-align: left; font-size: 13px;">Product</th>
-                <th style="padding: 10px; text-align: left; font-size: 13px;">SKU</th>
-                <th style="padding: 10px; text-align: left; font-size: 13px;">Stock</th>
-                <th style="padding: 10px; text-align: left; font-size: 13px;">Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for product in low_stock %}
-            <tr style="border-bottom: 1px solid #eee;">
-                <td style="padding: 10px; font-size: 14px;">{{ product['name'] }}</td>
-                <td style="padding: 10px; font-size: 14px; color: #888;">{{ product['sku'] }}</td>
-                <td style="padding: 10px;">
-                    <span style="background: #f8d7da; color: #721c24;
-                                 padding: 2px 8px; border-radius: 4px; font-size: 12px;">
-                        {{ product['stock_qty'] }} left
-                    </span>
-                </td>
-                <td style="padding: 10px;">
-                    <a href="/products/edit/{{ product['id'] }}"
-                       style="font-size: 13px; color: #1a1a2e;">Update Stock →</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="card-header">
+        <div>
+            <div class="card-title text-red">⚠ Low Stock Alerts</div>
+            <div class="card-subtitle">{{ low_stock|length }} product(s) below their minimum threshold</div>
+        </div>
+        <a href="/products" class="btn btn-outline btn-sm">Manage Stock</a>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>SKU</th>
+                    <th>Stock</th>
+                    <th>Min Level</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in low_stock %}
+                <tr>
+                    <td class="font-semibold">{{ product['name'] }}</td>
+                    <td class="td-muted">{{ product['sku'] }}</td>
+                    <td><span class="badge badge-red">{{ product['stock_qty'] }} left</span></td>
+                    <td class="td-muted">{{ product['min_stock'] }}</td>
+                    <td><a href="/products/edit/{{ product['id'] }}" class="btn btn-outline btn-sm">Update Stock</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="card" style="text-align:center; padding: 40px;">
+    <div style="font-size: 40px; margin-bottom: 12px;">✅</div>
+    <div class="card-title">All stock levels are healthy!</div>
+    <div class="card-subtitle mt-4">No products are below their minimum thresholds.</div>
 </div>
 {% endif %}
-</div>
 
 {% endblock %}

@@ -1,48 +1,38 @@
 {% extends "base.html" %}
-
 {% block title %}Customers{% endblock %}
+{% block page_title %}Customers{% endblock %}
+{% block page_subtitle %}<span>Your client base</span>{% endblock %}
+{% block topbar_actions %}
+<a href="/customers/add" class="btn btn-primary">+ Add Customer</a>
+{% endblock %}
 
 {% block content %}
 <div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h2>Customers</h2>
-        <a href="/customers/add" style="background: #e2b96f; color: #1a1a2e; padding: 8px 16px;
-           border-radius: 6px; text-decoration: none; font-size: 14px; font-weight: 600;">
-            + Add Customer
-        </a>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr><th>Name</th><th>Email</th><th>Phone</th><th>Address</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+                {% for c in customers %}
+                <tr>
+                    <td class="font-semibold">{{ c['name'] }}</td>
+                    <td class="td-muted">{{ c['email'] or '—' }}</td>
+                    <td class="td-muted">{{ c['phone'] or '—' }}</td>
+                    <td class="td-muted" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ c['address'] or '—' }}</td>
+                    <td>
+                        <div class="flex gap-8">
+                            <a href="/customers/edit/{{ c['id'] }}" class="btn btn-outline btn-sm">Edit</a>
+                            <a href="/customers/delete/{{ c['id'] }}" class="btn btn-danger btn-sm"
+                               onclick="return confirm('Delete karna chahte ho?')">Delete</a>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="td-empty">Koi customer nahi. "Add Customer" click karo!</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-
-    <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-        <thead>
-            <tr style="background: #f0f0f0;">
-                <th style="padding: 10px; text-align: left; font-size: 13px;">Name</th>
-                <th style="padding: 10px; text-align: left; font-size: 13px;">Email</th>
-                <th style="padding: 10px; text-align: left; font-size: 13px;">Phone</th>
-                <th style="padding: 10px; text-align: left; font-size: 13px;">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for customer in customers %}
-            <tr style="border-bottom: 1px solid #eee;">
-                <td style="padding: 10px; font-size: 14px;">{{ customer['name'] }}</td>
-                <td style="padding: 10px; font-size: 14px; color: #888;">{{ customer['email'] or '—' }}</td>
-                <td style="padding: 10px; font-size: 14px; color: #888;">{{ customer['phone'] or '—' }}</td>
-                <td style="padding: 10px;">
-                    <a href="/customers/edit/{{ customer['id'] }}"
-                       style="font-size: 13px; color: #1a1a2e; margin-right: 12px;">Edit</a>
-                    <a href="/customers/delete/{{ customer['id'] }}"
-                       style="font-size: 13px; color: #dc3545;"
-                       onclick="return confirm('Delete karna chahte ho?')">Delete</a>
-                </td>
-            </tr>
-            {% else %}
-            <tr>
-                <td colspan="4" style="padding: 20px; text-align: center; color: #aaa; font-size: 14px;">
-                    Koi customer nahi abhi. "+ Add Customer" click karo!
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
 </div>
 {% endblock %}

@@ -1,71 +1,72 @@
 {% extends "base.html" %}
-
 {% block title %}{{ 'Edit' if product else 'Add' }} Product{% endblock %}
+{% block page_title %}{{ 'Edit' if product else 'New' }} Product{% endblock %}
+{% block topbar_actions %}
+<a href="/products" class="btn btn-outline btn-sm">← Back to Products</a>
+{% endblock %}
 
 {% block content %}
-<div class="card">
-    <h2>{{ 'Edit' if product else 'Naya' }} Product</h2>
-
-    <form method="POST" style="margin-top: 20px;">
-
-        <div class="form-group">
-            <label>Product Name</label>
-            <input type="text" name="name" 
-                   value="{{ product['name'] if product else '' }}"
-                   placeholder="Jaise: Laptop, Mouse, T-Shirt...">
+<div class="card" style="max-width: 720px;">
+    <form method="POST">
+        <div class="form-grid">
+            <div class="form-group">
+                <label class="form-label">Product Name *</label>
+                <input class="form-control" type="text" name="name"
+                       value="{{ product['name'] if product else '' }}"
+                       placeholder="e.g. Laptop, T-Shirt...">
+            </div>
+            <div class="form-group">
+                <label class="form-label">SKU (Unique Code) *</label>
+                <input class="form-control" type="text" name="sku"
+                       value="{{ product['sku'] if product else '' }}"
+                       placeholder="e.g. LAP-001">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Purchase Price (₹)</label>
+                <input class="form-control" type="number" name="purchase_price" step="0.01"
+                       value="{{ product['purchase_price'] if product else '' }}"
+                       placeholder="0.00">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Selling Price (₹) *</label>
+                <input class="form-control" type="number" name="unit_price" step="0.01"
+                       value="{{ product['unit_price'] if product else '' }}"
+                       placeholder="0.00">
+            </div>
+            <div class="form-group">
+                <label class="form-label">GST (%)</label>
+                <select class="form-control" name="gst_percent">
+                    <option value="0"  {% if product and product['gst_percent'] == 0  %}selected{% endif %}>0%</option>
+                    <option value="5"  {% if product and product['gst_percent'] == 5  %}selected{% endif %}>5%</option>
+                    <option value="12" {% if product and product['gst_percent'] == 12 %}selected{% endif %}>12%</option>
+                    <option value="18" {% if product and product['gst_percent'] == 18 %}selected{% endif %}>18%</option>
+                    <option value="28" {% if product and product['gst_percent'] == 28 %}selected{% endif %}>28%</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Stock Quantity</label>
+                <input class="form-control" type="number" name="stock_qty"
+                       value="{{ product['stock_qty'] if product else '0' }}" min="0">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Low Stock Alert Level</label>
+                <input class="form-control" type="number" name="min_stock"
+                       value="{{ product['min_stock'] if product else '10' }}" min="0">
+                <span class="form-hint">Dashboard alert jab stock yahan se neeche jaye</span>
+            </div>
+            <div class="form-group form-full">
+                <label class="form-label">Description</label>
+                <textarea class="form-control" name="description"
+                          placeholder="Product ke baare mein...">{{ product['description'] if product else '' }}</textarea>
+            </div>
         </div>
 
-        <div class="form-group">
-            <label>SKU (Unique Code)</label>
-            <input type="text" name="sku" 
-                   value="{{ product['sku'] if product else '' }}"
-                   placeholder="Jaise: LAP-001, MOU-001...">
+        <div class="actions-row">
+            <button type="submit" class="btn btn-primary">
+                {{ 'Update' if product else 'Save' }} Product
+            </button>
+            <a href="/products" class="btn btn-outline">Cancel</a>
         </div>
-
-        <div class="form-group">
-            <label>Purchase Price (₹)</label>
-            <input type="number" name="purchase_price" step="0.01"
-                   value="{{ product['purchase_price'] if product else '' }}"
-                   placeholder="Vendor se kharida price">
-        </div>
-
-        <div class="form-group">
-            <label>Selling Price (₹)</label>
-            <input type="number" name="unit_price" step="0.01"
-                   value="{{ product['unit_price'] if product else '' }}"
-                   placeholder="Customer ko becha price">
-        </div>
-
-        <div class="form-group">
-            <label>GST (%)</label>
-            <select name="gst_percent" style="width: 100%; padding: 10px 12px;
-                border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
-                <option value="0" {% if product and product['gst_percent'] == 0 %}selected{% endif %}>0%</option>
-                <option value="5" {% if product and product['gst_percent'] == 5 %}selected{% endif %}>5%</option>
-                <option value="12" {% if product and product['gst_percent'] == 12 %}selected{% endif %}>12%</option>
-                <option value="18" {% if product and product['gst_percent'] == 18 %}selected{% endif %}>18%</option>
-                <option value="28" {% if product and product['gst_percent'] == 28 %}selected{% endif %}>28%</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label>Stock Quantity</label>
-            <input type="number" name="stock_qty"
-                   value="{{ product['stock_qty'] if product else '0' }}"
-                   placeholder="0">
-        </div>
-
-        <div class="form-group">
-            <label>Description (Optional)</label>
-            <textarea name="description" rows="3" 
-                      placeholder="Product ke baare mein kuch likho...">{{ product['description'] if product else '' }}</textarea>
-        </div>
-
-        <button type="submit">
-            {{ 'Update' if product else 'Save' }} Product
-        </button>
-        <a href="/products" class="btn-cancel">Cancel</a>
-
     </form>
 </div>
 {% endblock %}

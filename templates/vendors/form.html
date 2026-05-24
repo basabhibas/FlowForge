@@ -1,45 +1,42 @@
 {% extends "base.html" %}
-
 {% block title %}{{ 'Edit' if vendor else 'Add' }} Vendor{% endblock %}
+{% block page_title %}{{ 'Edit' if vendor else 'New' }} Vendor{% endblock %}
+{% block topbar_actions %}
+<a href="/vendors" class="btn btn-outline btn-sm">← Back to Vendors</a>
+{% endblock %}
 
 {% block content %}
-<div class="card">
-    <h2>{{ 'Edit' if vendor else 'Naya' }} Vendor</h2>
-
-    <form method="POST" style="margin-top: 20px;">
-
-        <div class="form-group">
-            <label>Vendor Name</label>
-            <input type="text" name="name"
-                   value="{{ vendor['name'] if vendor else '' }}"
-                   placeholder="Jaise: ABC Suppliers, XYZ Trading...">
+<div class="card" style="max-width: 600px;">
+    <form method="POST">
+        <div class="form-grid">
+            <div class="form-group form-full">
+                <label class="form-label">Vendor Name *</label>
+                <input class="form-control" type="text" name="name"
+                       value="{{ vendor['name'] if vendor else '' }}"
+                       placeholder="e.g. ABC Suppliers...">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input class="form-control" type="email" name="email"
+                       value="{{ vendor['email'] if vendor else '' }}"
+                       placeholder="vendor@example.com">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Phone</label>
+                <input class="form-control" type="text" name="phone"
+                       value="{{ vendor['phone'] if vendor else '' }}"
+                       placeholder="9876543210">
+            </div>
+            <div class="form-group form-full">
+                <label class="form-label">Address</label>
+                <textarea class="form-control" name="address"
+                          placeholder="Vendor ka address...">{{ vendor['address'] if vendor else '' }}</textarea>
+            </div>
         </div>
-
-        <div class="form-group">
-            <label>Email</label>
-            <input type="email" name="email"
-                   value="{{ vendor['email'] if vendor else '' }}"
-                   placeholder="vendor@example.com">
+        <div class="actions-row">
+            <button type="submit" class="btn btn-primary">{{ 'Update' if vendor else 'Save' }} Vendor</button>
+            <a href="/vendors" class="btn btn-outline">Cancel</a>
         </div>
-
-        <div class="form-group">
-            <label>Phone</label>
-            <input type="text" name="phone"
-                   value="{{ vendor['phone'] if vendor else '' }}"
-                   placeholder="9876543210">
-        </div>
-
-        <div class="form-group">
-            <label>Address</label>
-            <textarea name="address" rows="3"
-                      placeholder="Vendor ka address...">{{ vendor['address'] if vendor else '' }}</textarea>
-        </div>
-
-        <button type="submit">
-            {{ 'Update' if vendor else 'Save' }} Vendor
-        </button>
-        <a href="/vendors" class="btn-cancel">Cancel</a>
-
     </form>
 </div>
 {% endblock %}

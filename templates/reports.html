@@ -1,114 +1,127 @@
 {% extends "base.html" %}
-
 {% block title %}Reports{% endblock %}
+{% block page_title %}Reports{% endblock %}
+{% block page_subtitle %}<span>Business analytics</span>{% endblock %}
 
 {% block content %}
 
-<!-- Summary Cards -->
-<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;">
-    <div class="card" style="text-align: center;">
-        <p style="font-size: 13px; color: #888; margin-bottom: 8px;">Total Revenue</p>
-        <h2 style="font-size: 28px; color: #1a1a2e;">₹{{ "%.0f"|format(total_revenue) }}</h2>
+<!-- Summary Stats -->
+<div class="stat-grid" style="grid-template-columns: repeat(4, 1fr);">
+    <div class="stat-card">
+        <div class="stat-icon gold">💰</div>
+        <div class="stat-body">
+            <div class="stat-label">Total Revenue</div>
+            <div class="stat-value" style="font-size:22px;">₹{{ "%.0f"|format(total_revenue) }}</div>
+        </div>
     </div>
-    <div class="card" style="text-align: center;">
-        <p style="font-size: 13px; color: #888; margin-bottom: 8px;">Total Orders</p>
-        <h2 style="font-size: 28px; color: #1a1a2e;">{{ total_orders }}</h2>
+    <div class="stat-card">
+        <div class="stat-icon blue">📋</div>
+        <div class="stat-body">
+            <div class="stat-label">Total Orders</div>
+            <div class="stat-value" style="font-size:22px;">{{ total_orders }}</div>
+        </div>
     </div>
-    <div class="card" style="text-align: center;">
-        <p style="font-size: 13px; color: #888; margin-bottom: 8px;">Paid Invoices</p>
-        <h2 style="font-size: 28px; color: #28a745;">{{ paid_invoices }}</h2>
+    <div class="stat-card">
+        <div class="stat-icon green">✅</div>
+        <div class="stat-body">
+            <div class="stat-label">Paid Invoices</div>
+            <div class="stat-value" style="font-size:22px; color: var(--green);">{{ paid_invoices }}</div>
+        </div>
     </div>
-    <div class="card" style="text-align: center;">
-        <p style="font-size: 13px; color: #888; margin-bottom: 8px;">Pending Invoices</p>
-        <h2 style="font-size: 28px; color: #e2b96f;">{{ pending_invoices }}</h2>
+    <div class="stat-card">
+        <div class="stat-icon red">⏳</div>
+        <div class="stat-body">
+            <div class="stat-label">Pending Invoices</div>
+            <div class="stat-value" style="font-size:22px; color: var(--accent);">{{ pending_invoices }}</div>
+        </div>
     </div>
 </div>
 
-<!-- Charts Row -->
+<!-- Charts -->
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
-
-    <!-- Monthly Revenue Chart -->
     <div class="card">
-        <h3 style="margin-bottom: 16px; font-size: 15px;">Monthly Revenue</h3>
-        <canvas id="revenueChart" height="200"></canvas>
+        <div class="card-title mb-16">Monthly Revenue</div>
+        <canvas id="revenueChart" height="220"></canvas>
     </div>
-
-    <!-- Top Products Chart -->
     <div class="card">
-        <h3 style="margin-bottom: 16px; font-size: 15px;">Top Selling Products</h3>
-        <canvas id="productsChart" height="200"></canvas>
+        <div class="card-title mb-16">Top Selling Products</div>
+        <canvas id="productsChart" height="220"></canvas>
     </div>
-
 </div>
 
 <!-- Top Products Table -->
 <div class="card">
-    <h3 style="margin-bottom: 16px; font-size: 15px;">Top Selling Products</h3>
-    <table style="width: 100%; border-collapse: collapse;">
-        <thead>
-            <tr style="background: #f0f0f0;">
-                <th style="padding: 10px; text-align: left; font-size: 13px;">Product</th>
-                <th style="padding: 10px; text-align: left; font-size: 13px;">Units Sold</th>
-                <th style="padding: 10px; text-align: left; font-size: 13px;">Revenue</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for product in top_products %}
-            <tr style="border-bottom: 1px solid #eee;">
-                <td style="padding: 10px; font-size: 14px;">{{ product['name'] }}</td>
-                <td style="padding: 10px; font-size: 14px;">{{ product['total_qty'] }}</td>
-                <td style="padding: 10px; font-size: 14px;">₹{{ "%.0f"|format(product['total_revenue']) }}</td>
-            </tr>
-            {% else %}
-            <tr>
-                <td colspan="3" style="padding: 20px; text-align: center; color: #aaa; font-size: 14px;">
-                    Koi data nahi abhi.
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="card-title mb-16">Top Selling Products</div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr><th>Product</th><th>Units Sold</th><th>Revenue</th></tr>
+            </thead>
+            <tbody>
+                {% for product in top_products %}
+                <tr>
+                    <td class="font-semibold">{{ product['name'] }}</td>
+                    <td>{{ product['total_qty'] }}</td>
+                    <td class="font-semibold text-accent">₹{{ "%.0f"|format(product['total_revenue']) }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="3" class="td-empty">Koi data nahi abhi. Orders confirm karo!</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
-<!-- Chart.js -->
+{% endblock %}
+
+{% block scripts %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
 <script>
-    // Monthly Revenue Chart
-    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
-    new Chart(revenueCtx, {
+    Chart.defaults.color = '#8892aa';
+    Chart.defaults.borderColor = '#252a3a';
+    Chart.defaults.font.family = "'Inter', sans-serif";
+
+    // Monthly Revenue
+    new Chart(document.getElementById('revenueChart').getContext('2d'), {
         type: 'bar',
         data: {
             labels: {{ monthly_labels | tojson }},
             datasets: [{
                 label: 'Revenue (₹)',
                 data: {{ monthly_data | tojson }},
-                backgroundColor: '#e2b96f',
-                borderRadius: 4
+                backgroundColor: 'rgba(240,192,96,0.75)',
+                borderColor: '#f0c060',
+                borderRadius: 6,
+                borderWidth: 1,
             }]
         },
         options: {
             responsive: true,
             plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero: true } }
+            scales: {
+                y: { beginAtZero: true, grid: { color: '#252a3a' } },
+                x: { grid: { display: false } }
+            }
         }
     });
 
-    // Top Products Chart
-    const productsCtx = document.getElementById('productsChart').getContext('2d');
-    new Chart(productsCtx, {
+    // Top Products Doughnut
+    new Chart(document.getElementById('productsChart').getContext('2d'), {
         type: 'doughnut',
         data: {
             labels: {{ product_labels | tojson }},
             datasets: [{
                 data: {{ product_data | tojson }},
-                backgroundColor: ['#1a1a2e', '#e2b96f', '#28a745', '#dc3545', '#17a2b8']
+                backgroundColor: ['#f0c060','#34d399','#60a5fa','#f87171','#a78bfa'],
+                borderColor: '#13161f',
+                borderWidth: 3,
             }]
         },
         options: {
             responsive: true,
-            plugins: { legend: { position: 'bottom' } }
+            cutout: '65%',
+            plugins: { legend: { position: 'bottom', labels: { padding: 16 } } }
         }
     });
 </script>
-
 {% endblock %}
