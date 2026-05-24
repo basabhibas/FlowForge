@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}New Purchase Order{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Naya Purchase Order</h2>
+
+    <form method="POST" action="/purchase-orders/add" style="margin-top: 20px;">
+
+        <div class="form-group">
+            <label>Vendor Select Karo</label>
+            <select name="vendor_id" style="width: 100%; padding: 10px 12px;
+                border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                <option value="">-- Vendor Chuno --</option>
+                {% for vendor in vendors %}
+                <option value="{{ vendor['id'] }}">{{ vendor['name'] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <h3 style="margin-top: 24px; margin-bottom: 16px; font-size: 15px;">Items</h3>
+
+        <div id="items-container">
+            <div class="po-item" style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr;
+                 gap: 12px; margin-bottom: 12px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Product</label>
+                    <select name="product_id[]" style="width: 100%; padding: 10px 12px;
+                        border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                        <option value="">-- Product Chuno --</option>
+                        {% for product in products %}
+                        <option value="{{ product['id'] }}">{{ product['name'] }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Quantity</label>
+                    <input type="number" name="quantity[]" min="1" value="1"
+                           style="width: 100%; padding: 10px 12px;
+                           border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Purchase Price (₹)</label>
+                    <input type="number" name="purchase_price[]" step="0.01" min="0"
+                           placeholder="0.00"
+                           style="width: 100%; padding: 10px 12px;
+                           border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>GST (%)</label>
+                    <select name="gst_percent[]" style="width: 100%; padding: 10px 12px;
+                        border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                        <option value="0">0%</option>
+                        <option value="5">5%</option>
+                        <option value="12">12%</option>
+                        <option value="18">18%</option>
+                        <option value="28">28%</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <button type="button" onclick="addItem()"
+                style="background: #f0f0f0; color: #333; padding: 8px 16px;
+                border: 1px solid #ddd; border-radius: 6px; font-size: 13px;
+                cursor: pointer; margin-bottom: 20px;">
+            + Add Another Item
+        </button>
+
+        <br>
+        <button type="submit">Create Purchase Order</button>
+        <a href="/purchase-orders" class="btn-cancel">Cancel</a>
+
+    </form>
+</div>
+
+<script>
+function addItem() {
+    const container = document.getElementById('items-container');
+    const firstItem = container.querySelector('.po-item');
+    const newItem = firstItem.cloneNode(true);
+    newItem.querySelectorAll('select').forEach(s => s.selectedIndex = 0);
+    newItem.querySelectorAll('input').forEach(i => i.value = '');
+    container.appendChild(newItem);
+}
+</script>
+{% endblock %}

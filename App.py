@@ -393,6 +393,137 @@ def orders_delete(id):
     flash("Order delete ho gaya!", "success")
     return redirect(url_for('orders_list'))
 
+# ─── PURCHASE ORDERS ────────────────────────────────
+@app.route('/purchase-orders')
+def po_list():
+    db = get_db()
+    purchase_orders = db.execute('''
+        SELECT purchase_orders.*, vendors.name as vendor_name
+        FROM purchase_orders
+        JOIN vendors ON purchase_orders.vendor_id = vendors.id
+        ORDER BY purchase_orders.created_at DESC
+    ''').fetchall()
+    db.close()
+    return render_template('purchase_orders/list.html', purchase_orders=purchase_orders)
+
+@app.route('/purchase-orders/add', methods=['GET', 'POST'])
+def po_add():
+    db = get_db()
+    if request.method == 'POST':
+        vendor_id = request.form['vendor_id']
+        product_ids = request.form.getlist('product_id[]')
+        quantities = request.form.getlist('quantity[]')
+        purchase_prices = request.form.getlist('purchase_price[]')
+        gst_percents = request.form.getlist('gst_percent[]')
+
+        if not vendor_id:
+            flash("Vendor select karo!", "danger")
+            return redirect(url_for('po_add'))
+
+        # PO banao
+        db.execute(
+            'INSERT INTO purchase_orders (vendor_id, status, total_amount) VALUES (?, ?, ?)',
+            (vendor_id, 'pending', 0)
+        )
+        db.commit()
+        po_id = db.execute('SELECT last_insert_rowid()').fetchone()[0]
+
+        # PO items add karo
+        total = 0
+        for pid, qty, price, gst in zip(product_ids, quantities, purchase_prices, gst_percents):
+            if pid and qty and price:
+                qty = int(qty)
+                price = float(price)
+                gst = float(gst or 0)
+                gst_amount = price * qty * gst / 100
+                subtotal = price * qty + gst_amount
+                total += subtotal
+                db.execute(
+                    'INSERT INTO purchase_order_items (po_id, product_id, quantity, unit_price, gst_percent) VALUES (?, ?, ?, ?, ?)',
+                    (po_id, pid, qty, price, gst)
+                )
+
+        # Total update karo
+        db.execute('UPDATE purchase_orders SET total_amount = ? WHERE id = ?', (total, po_id))
+        db.commit()
+        db.close()
+
+        flash("Purchase Order create ho gaya!", "success")
+        return redirect(url_for('po_list'))
+
+    vendors = db.execute('SELECT * FROM vendors').fetchall()
+    products = db.execute('SELECT * FROM products').fetchall()
+    db.close()
+    return render_template('purchase_orders/form.html', vendors=vendors, products=products)
+
+@app.route('/purchase-orders/<int:id>')
+def po_detail(id):
+    db = get_db()
+    po = db.execute('''
+        SELECT purchase_orders.*, vendors.name as vendor_name
+        FROM purchase_orders
+        JOIN vendors ON purchase_orders.vendor_id = vendors.id
+        WHERE purchase_orders.id = ?
+    ''', (id,)).fetchone()
+
+    if not po:
+        flash("Purchase Order nahi mila!", "danger")
+        return redirect(url_for('po_list'))
+
+    items = db.execute('''
+        SELECT purchase_order_items.*, products.name as product_name
+        FROM purchase_order_items
+        JOIN products ON purchase_order_items.product_id = products.id
+        WHERE purchase_order_items.po_id = ?
+    ''', (id,)).fetchall()
+    db.close()
+    return render_template('purchase_orders/detail.html', po=po, items=items)
+
+@app.route('/purchase-orders/receive/<int:id>')
+def po_receive(id):
+    db = get_db()
+    po = db.execute('SELECT * FROM purchase_orders WHERE id = ?', (id,)).fetchone()
+
+    if not po:
+        flash("Purchase Order nahi mila!", "danger")
+        return redirect(url_for('po_list'))
+
+    if po['status'] != 'pending':
+        flash("Yeh PO already receive ho chuka hai!", "warning")
+        return redirect(url_for('po_detail', id=id))
+
+    # Stock update karo
+    items = db.execute(
+        'SELECT * FROM purchase_order_items WHERE po_id = ?', (id,)
+    ).fetchall()
+
+    for item in items:
+        db.execute(
+            'UPDATE products SET stock_qty = stock_qty + ? WHERE id = ?',
+            (item['quantity'], item['product_id'])
+        )
+
+    # PO status update karo
+    db.execute(
+        'UPDATE purchase_orders SET status = ? WHERE id = ?',
+        ('received', id)
+    )
+    db.commit()
+    db.close()
+
+    flash("Stock receive ho gaya! Inventory update ho gayi!", "success")
+    return redirect(url_for('po_detail', id=id))
+
+@app.route('/purchase-orders/delete/<int:id>')
+def po_delete(id):
+    db = get_db()
+    db.execute('DELETE FROM purchase_order_items WHERE po_id = ?', (id,))
+    db.execute('DELETE FROM purchase_orders WHERE id = ?', (id,))
+    db.commit()
+    db.close()
+    flash("Purchase Order delete ho gaya!", "success")
+    return redirect(url_for('po_list'))
+
 # ─── ABOUT ──────────────────────────────────────────
 @app.route('/about')
 def about():

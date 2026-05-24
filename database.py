@@ -25,7 +25,9 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             sku TEXT UNIQUE NOT NULL,
+            purchase_price REAL NOT NULL DEFAULT 0,
             unit_price REAL NOT NULL,
+            gst_percent REAL DEFAULT 0,
             stock_qty INTEGER DEFAULT 0,
             description TEXT
         )
@@ -70,6 +72,30 @@ def init_db():
             quantity INTEGER NOT NULL,
             unit_price REAL NOT NULL,
             FOREIGN KEY (order_id) REFERENCES orders(id),
+            FOREIGN KEY (product_id) REFERENCES products(id)
+        )
+    ''')
+
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS purchase_orders (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            vendor_id INTEGER NOT NULL,
+            status TEXT DEFAULT 'pending',
+            total_amount REAL DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (vendor_id) REFERENCES vendors(id)
+        )
+    ''')
+
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS purchase_order_items (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            po_id INTEGER NOT NULL,
+            product_id INTEGER NOT NULL,
+            quantity INTEGER NOT NULL,
+            unit_price REAL NOT NULL,
+            gst_percent REAL DEFAULT 0,
+            FOREIGN KEY (po_id) REFERENCES purchase_orders(id),
             FOREIGN KEY (product_id) REFERENCES products(id)
         )
     ''')
