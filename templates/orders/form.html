@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}New Order{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Naya Order Banao</h2>
+
+    <form method="POST" action="/orders/add" style="margin-top: 20px;">
+
+        <div class="form-group">
+            <label>Customer Select Karo</label>
+            <select name="customer_id" style="width: 100%; padding: 10px 12px;
+                border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                <option value="">-- Customer Chuno --</option>
+                {% for customer in customers %}
+                <option value="{{ customer['id'] }}">{{ customer['name'] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <h3 style="margin-top: 24px; margin-bottom: 16px; font-size: 15px;">Order Items</h3>
+
+        <div id="items-container">
+            <div class="order-item" style="display: grid; grid-template-columns: 2fr 1fr;
+                 gap: 12px; margin-bottom: 12px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Product</label>
+                    <select name="product_id[]" style="width: 100%; padding: 10px 12px;
+                        border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                        <option value="">-- Product Chuno --</option>
+                        {% for product in products %}
+                        <option value="{{ product['id'] }}">
+                            {{ product['name'] }} (Stock: {{ product['stock_qty'] }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Quantity</label>
+                    <input type="number" name="quantity[]" min="1" value="1"
+                           style="width: 100%; padding: 10px 12px;
+                           border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                </div>
+            </div>
+        </div>
+
+        <button type="button" onclick="addItem()"
+                style="background: #f0f0f0; color: #333; padding: 8px 16px;
+                border: 1px solid #ddd; border-radius: 6px; font-size: 13px;
+                cursor: pointer; margin-bottom: 20px;">
+            + Add Another Item
+        </button>
+
+        <br>
+        <button type="submit">Create Order</button>
+        <a href="/orders" class="btn-cancel">Cancel</a>
+
+    </form>
+</div>
+
+<script>
+function addItem() {
+    const container = document.getElementById('items-container');
+    const firstItem = container.querySelector('.order-item');
+    const newItem = firstItem.cloneNode(true);
+    newItem.querySelectorAll('select').forEach(s => s.selectedIndex = 0);
+    newItem.querySelectorAll('input').forEach(i => i.value = 1);
+    container.appendChild(newItem);
+}
+</script>
+{% endblock %}

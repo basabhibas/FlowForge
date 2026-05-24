@@ -28,10 +28,10 @@
 </div>
 
 <!-- Low Stock Alert -->
+{% if low_stock %}
 <div class="card">
     <h3 style="margin-bottom: 16px; color: #dc3545;">⚠ Low Stock Alerts</h3>
 
-    {% if low_stock %}
     <table style="width: 100%; border-collapse: collapse;">
         <thead>
             <tr style="background: #f0f0f0;">
@@ -60,9 +60,8 @@
             {% endfor %}
         </tbody>
     </table>
-    {% else %}
-    <p style="color: #aaa; font-size: 14px;">✅ Sab products ka stock theek hai!</p>
-    {% endif %}
+</div>
+{% endif %}
 </div>
 
 {% endblock %}

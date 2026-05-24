@@ -18,9 +18,9 @@ def index():
     total_vendors = db.execute('SELECT COUNT(*) FROM vendors').fetchone()[0]
     total_customers = db.execute('SELECT COUNT(*) FROM customers').fetchone()[0]
     
-    # Low stock products (stock 5 se kam)
+    # Low stock products (stock 10 se kam)
     low_stock = db.execute(
-        'SELECT * FROM products WHERE stock_qty < 5'
+        'SELECT * FROM products WHERE stock_qty <=10'
     ).fetchall()
     
     db.close()
@@ -263,6 +263,135 @@ def customers_delete(id):
     db.close()
     flash("Customer delete ho gaya!", "success")
     return redirect(url_for('customers_list'))
+
+# ─── ORDERS ─────────────────────────────────────────
+@app.route('/orders')
+def orders_list():
+    db = get_db()
+    orders = db.execute('''
+        SELECT orders.*, customers.name as customer_name
+        FROM orders
+        JOIN customers ON orders.customer_id = customers.id
+        ORDER BY orders.created_at DESC
+    ''').fetchall()
+    db.close()
+    return render_template('orders/list.html', orders=orders)
+
+@app.route('/orders/add', methods=['GET', 'POST'])
+def orders_add():
+    db = get_db()
+    if request.method == 'POST':
+        customer_id = request.form['customer_id']
+        product_ids = request.form.getlist('product_id[]')
+        quantities = request.form.getlist('quantity[]')
+
+        if not customer_id:
+            flash("Customer select karo!", "danger")
+            return redirect(url_for('orders_add'))
+
+        # Order banao
+        db.execute(
+            'INSERT INTO orders (customer_id, status, total_amount) VALUES (?, ?, ?)',
+            (customer_id, 'pending', 0)
+        )
+        db.commit()
+        order_id = db.execute('SELECT last_insert_rowid()').fetchone()[0]
+
+        # Order items add karo
+        total = 0
+        for pid, qty in zip(product_ids, quantities):
+            if pid and qty:
+                product = db.execute(
+                    'SELECT * FROM products WHERE id = ?', (pid,)
+                ).fetchone()
+                if product:
+                    subtotal = product['unit_price'] * int(qty)
+                    total += subtotal
+                    db.execute(
+                        'INSERT INTO order_items (order_id, product_id, quantity, unit_price) VALUES (?, ?, ?, ?)',
+                        (order_id, pid, int(qty), product['unit_price'])
+                    )
+
+        # Total update karo
+        db.execute('UPDATE orders SET total_amount = ? WHERE id = ?', (total, order_id))
+        db.commit()
+        db.close()
+
+        flash("Order create ho gaya!", "success")
+        return redirect(url_for('orders_list'))
+
+    customers = db.execute('SELECT * FROM customers').fetchall()
+    products = db.execute('SELECT * FROM products WHERE stock_qty > 0').fetchall()
+    db.close()
+    return render_template('orders/form.html', customers=customers, products=products)
+
+@app.route('/orders/<int:id>')
+def orders_detail(id):
+    db = get_db()
+    order = db.execute('''
+        SELECT orders.*, customers.name as customer_name
+        FROM orders
+        JOIN customers ON orders.customer_id = customers.id
+        WHERE orders.id = ?
+    ''', (id,)).fetchone()
+
+    if not order:
+        flash("Order nahi mila!", "danger")
+        return redirect(url_for('orders_list'))
+
+    items = db.execute('''
+        SELECT order_items.*, products.name as product_name
+        FROM order_items
+        JOIN products ON order_items.product_id = products.id
+        WHERE order_items.order_id = ?
+    ''', (id,)).fetchall()
+    db.close()
+    return render_template('orders/detail.html', order=order, items=items)
+
+@app.route('/orders/confirm/<int:id>')
+def orders_confirm(id):
+    db = get_db()
+    order = db.execute('SELECT * FROM orders WHERE id = ?', (id,)).fetchone()
+
+    if not order:
+        flash("Order nahi mila!", "danger")
+        return redirect(url_for('orders_list'))
+
+    if order['status'] != 'pending':
+        flash("Yeh order already confirm ho chuka hai!", "warning")
+        return redirect(url_for('orders_detail', id=id))
+
+    # Stock deduct karo
+    items = db.execute(
+        'SELECT * FROM order_items WHERE order_id = ?', (id,)
+    ).fetchall()
+
+    for item in items:
+        db.execute(
+            'UPDATE products SET stock_qty = stock_qty - ? WHERE id = ?',
+            (item['quantity'], item['product_id'])
+        )
+
+    # Order status update karo
+    db.execute(
+        'UPDATE orders SET status = ? WHERE id = ?',
+        ('confirmed', id)
+    )
+    db.commit()
+    db.close()
+
+    flash("Order confirm ho gaya! Stock update ho gaya!", "success")
+    return redirect(url_for('orders_detail', id=id))
+
+@app.route('/orders/delete/<int:id>')
+def orders_delete(id):
+    db = get_db()
+    db.execute('DELETE FROM order_items WHERE order_id = ?', (id,))
+    db.execute('DELETE FROM orders WHERE id = ?', (id,))
+    db.commit()
+    db.close()
+    flash("Order delete ho gaya!", "success")
+    return redirect(url_for('orders_list'))
 
 # ─── ABOUT ──────────────────────────────────────────
 @app.route('/about')
