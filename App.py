@@ -667,6 +667,64 @@ def settings():
     db.close()
     return render_template('settings.html', settings=settings)
 
+# ─── REPORTS ────────────────────────────────────────
+@app.route('/reports')
+def reports():
+    db = get_db()
+
+    # Summary stats
+    total_revenue = db.execute(
+        "SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE status = 'confirmed'"
+    ).fetchone()[0]
+    total_orders = db.execute("SELECT COUNT(*) FROM orders").fetchone()[0]
+    paid_invoices = db.execute(
+        "SELECT COUNT(*) FROM invoices WHERE status = 'paid'"
+    ).fetchone()[0]
+    pending_invoices = db.execute(
+        "SELECT COUNT(*) FROM invoices WHERE status = 'pending'"
+    ).fetchone()[0]
+
+    # Monthly revenue (last 6 months)
+    monthly = db.execute('''
+        SELECT strftime('%Y-%m', created_at) as month,
+               SUM(total_amount) as revenue
+        FROM orders
+        WHERE status = 'confirmed'
+        GROUP BY month
+        ORDER BY month DESC
+        LIMIT 6
+    ''').fetchall()
+    monthly_labels = [row['month'] for row in reversed(monthly)]
+    monthly_data = [row['revenue'] for row in reversed(monthly)]
+
+    # Top products
+    top_products = db.execute('''
+        SELECT products.name,
+               SUM(order_items.quantity) as total_qty,
+               SUM(order_items.quantity * order_items.unit_price) as total_revenue
+        FROM order_items
+        JOIN products ON order_items.product_id = products.id
+        JOIN orders ON order_items.order_id = orders.id
+        WHERE orders.status = 'confirmed'
+        GROUP BY products.id
+        ORDER BY total_revenue DESC
+        LIMIT 5
+    ''').fetchall()
+    product_labels = [p['name'] for p in top_products]
+    product_data = [p['total_revenue'] for p in top_products]
+
+    db.close()
+    return render_template('reports.html',
+        total_revenue=total_revenue,
+        total_orders=total_orders,
+        paid_invoices=paid_invoices,
+        pending_invoices=pending_invoices,
+        monthly_labels=monthly_labels,
+        monthly_data=monthly_data,
+        top_products=top_products,
+        product_labels=product_labels,
+        product_data=product_data
+    )
 
 # ─── ABOUT ──────────────────────────────────────────
 @app.route('/about')
